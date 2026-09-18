@@ -13,7 +13,6 @@
     "jsx": "react-jsx",
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
     "paths": {
       "@qaplatform/shared": ["../../packages/shared/src/index.ts"]
     }
