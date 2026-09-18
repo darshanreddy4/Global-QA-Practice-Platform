@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Enterprise-grade focus ring, kept for accessibility even though the design
+   is otherwise understated. Never remove outlines without a replacement. */
+:focus-visible {
+  outline: 2px solid theme("colors.brand.500");
+  outline-offset: 2px;
+}
