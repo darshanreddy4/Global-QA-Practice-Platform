@@ -55,10 +55,17 @@ requires zero backend rewrite and keeps the in-memory state model working correc
 
 ### 1. Deploy the API first (Render, Railway, or Fly — any works the same way)
 
-- Root directory: `apps/api` (or repo root with build command `npm install && npm run
-  build --workspace packages/shared && npm run build --workspace apps/api`).
-- Build command: `npm run build`
-- Start command: `npm start` (runs `node dist/server.js`)
+- Root directory: repo root (this is an npm-workspaces monorepo — `apps/api` depends
+  on `packages/shared`, so `npm install`/build must run from the repo root, not from
+  inside `apps/api`).
+- Build command: `npm install --include=dev && npm run build --workspace packages/shared && npm run build --workspace apps/api`
+  - **`--include=dev` is required.** Most hosts (Render included) set `NODE_ENV=production`
+    as an environment variable for the whole service — including during the install
+    step — which makes plain `npm install` silently skip devDependencies (`typescript`,
+    `@types/*`). Since the build needs `tsc` and type declarations, you must force them
+    in with `--include=dev` regardless of `NODE_ENV`. (devDependencies are only needed
+    for this build step — the compiled output that actually runs afterward doesn't need them.)
+- Start command: `npm run start --workspace apps/api` (runs `node dist/server.js`)
 - Environment variables (see [`apps/api/.env.example`](./apps/api/.env.example)):
   - `NODE_ENV=production`
   - `JWT_SECRET=<a long random string — the server refuses to start without this in production>`
@@ -67,6 +74,7 @@ requires zero backend rewrite and keeps the in-memory state model working correc
     different domains; without this the session cookie won't be sent cross-site at all.
   - `COOKIE_SECURE` doesn't need to be set — it's automatically `true` whenever
     `NODE_ENV=production`, which is required for `SameSite=None` cookies to work.
+- Health check path: `/api/health`
 - Note your API's public URL, e.g. `https://your-api.onrender.com`.
 
 ### 2. Deploy the frontend to Vercel
