@@ -16,3 +16,113 @@ body {
   outline: 2px solid theme("colors.brand.500");
   outline-offset: 2px;
 }
+
+/*
+ * Dark theme — implemented as global overrides of the existing Tailwind
+ * utility classes (rather than adding a `dark:` variant to every className
+ * across 40+ engine components) so every page, including the standalone
+ * /store/* and /window-lab/* routes rendered outside AppShell, gets full
+ * coverage from a single stylesheet. Solid/saturated action colors (button
+ * backgrounds like bg-brand-600, bg-red-600, bg-emerald-600, focus/error
+ * rings, and intentionally-dark surfaces like code blocks/modal backdrops
+ * bg-slate-800/900) are left untouched — they already read correctly on a
+ * dark page. Only light neutral surfaces, body text and pale accent tints
+ * (the ones calibrated to sit on a white page) are remapped.
+ */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #0b1220;
+}
+
+/* Neutral surfaces */
+.dark .bg-white { background-color: #17213a; }
+.dark .bg-slate-50 { background-color: #0f172a; }
+.dark .bg-slate-100 { background-color: #1e293b; }
+.dark .bg-slate-200 { background-color: #334155; }
+.dark .bg-slate-300 { background-color: #475569; }
+.dark .hover\:bg-slate-50:hover { background-color: #1c2740; }
+.dark .hover\:bg-slate-100:hover { background-color: #263449; }
+
+/* Neutral text */
+.dark .text-slate-900 { color: #f1f5f9; }
+.dark .text-slate-800 { color: #e2e8f0; }
+.dark .text-slate-700 { color: #cbd5e1; }
+.dark .text-slate-600 { color: #94a3b8; }
+.dark .text-slate-500 { color: #94a3b8; }
+.dark .text-slate-400 { color: #64748b; }
+.dark .hover\:text-slate-600:hover,
+.dark .hover\:text-brand-600:hover { color: #8aabff; }
+
+/* Neutral borders/dividers */
+.dark .border-slate-100 { border-color: #1e293b; }
+.dark .border-slate-200 { border-color: #263449; }
+.dark .border-slate-300 { border-color: #334155; }
+.dark .border-slate-400 { border-color: #475569; }
+.dark .divide-slate-100 > * + * { border-color: #1e293b; }
+.dark .divide-slate-200 > * + * { border-color: #263449; }
+
+/* Pale accent tints (badges/alert panels calibrated for a white page) */
+.dark .bg-brand-50 { background-color: rgba(59, 95, 224, 0.16); }
+.dark .bg-brand-50\/30 { background-color: rgba(59, 95, 224, 0.1); }
+.dark .bg-brand-50\/40 { background-color: rgba(59, 95, 224, 0.14); }
+.dark .bg-brand-100 { background-color: rgba(59, 95, 224, 0.24); }
+.dark .bg-brand-200 { background-color: rgba(59, 95, 224, 0.32); }
+.dark .bg-brand-300 { background-color: rgba(59, 95, 224, 0.4); }
+.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.16); }
+.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.26); }
+.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.16); }
+.dark .bg-red-50\/40 { background-color: rgba(239, 68, 68, 0.12); }
+.dark .bg-red-100 { background-color: rgba(239, 68, 68, 0.26); }
+.dark .bg-red-300 { background-color: rgba(239, 68, 68, 0.4); }
+.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.16); }
+.dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.26); }
+.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.16); }
+
+.dark .border-brand-100 { border-color: rgba(59, 95, 224, 0.3); }
+.dark .border-brand-200 { border-color: rgba(59, 95, 224, 0.4); }
+.dark .border-brand-300 { border-color: rgba(59, 95, 224, 0.5); }
+.dark .border-emerald-200 { border-color: rgba(16, 185, 129, 0.4); }
+.dark .border-red-100 { border-color: rgba(239, 68, 68, 0.3); }
+.dark .border-red-200 { border-color: rgba(239, 68, 68, 0.4); }
+.dark .border-red-300 { border-color: rgba(239, 68, 68, 0.5); }
+.dark .border-amber-300 { border-color: rgba(245, 158, 11, 0.5); }
+.dark .border-blue-300 { border-color: rgba(59, 130, 246, 0.5); }
+
+/* Text sitting on those pale tints needs lightening for contrast */
+.dark .text-brand-500 { color: #8aabff; }
+.dark .text-brand-600 { color: #8aabff; }
+.dark .text-brand-700 { color: #b7cdff; }
+.dark .text-brand-800 { color: #d9e6ff; }
+.dark .text-emerald-600 { color: #34d399; }
+.dark .text-emerald-700 { color: #6ee7b7; }
+.dark .text-emerald-800 { color: #a7f3d0; }
+.dark .text-red-500 { color: #f87171; }
+.dark .text-red-600 { color: #f87171; }
+.dark .text-red-700 { color: #fca5a5; }
+.dark .text-red-800 { color: #fecaca; }
+.dark .text-amber-500 { color: #fbbf24; }
+.dark .text-amber-600 { color: #fbbf24; }
+.dark .text-amber-700 { color: #fcd34d; }
+.dark .text-amber-800 { color: #fde68a; }
+
+.dark ::placeholder { color: #64748b; }
+
+/* Form controls: browser-native chrome (date pickers, checkboxes) follows color-scheme
+   above; plain bordered inputs/selects still need the surface remap. */
+.dark input, .dark select, .dark textarea {
+  background-color: #17213a;
+  color: #e2e8f0;
+}
+.dark input:disabled, .dark select:disabled, .dark textarea:disabled {
+  background-color: #0f172a;
+  color: #64748b;
+}
+
+/* Code snippets (bg-slate-900/text-slate-100) and modal/ad backdrops
+   (bg-slate-900/40, bg-slate-900/70) are intentionally left unchanged —
+   they already read as "dark" panels on a light page and still work as-is
+   here. */
+

@@ -3,6 +3,7 @@ import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
 import { categories, getChildren } from "@qaplatform/shared";
 import { Badge } from "../design-system";
 import { useAuthStore } from "../store/authStore";
+import { useThemeStore } from "../store/themeStore";
 import { GlobalSearch } from "../features/search/GlobalSearch";
 import { ErrorBoundary } from "../app/ErrorBoundary";
 
@@ -44,6 +45,7 @@ export function AppShell() {
           <GlobalSearch />
           <span className="hidden text-xs text-slate-400 lg:inline">Enterprise QA practice environment &mdash; fictional data only</span>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Link to="/automation-access" className="text-sm text-slate-500 hover:text-brand-600 hover:underline">
               Automation Access
             </Link>
@@ -74,6 +76,23 @@ const dedicatedRoutes: Record<string, string> = {
   dashboard: "/",
   practice: "/practice",
 };
+
+function ThemeToggle() {
+  const { theme, toggleTheme } = useThemeStore();
+  const isDark = theme === "dark";
+  return (
+    <button
+      type="button"
+      data-testid="theme-toggle"
+      onClick={toggleTheme}
+      aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+      title={isDark ? "Switch to light theme" : "Switch to dark theme"}
+      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-sm text-slate-600 hover:bg-slate-100"
+    >
+      {isDark ? "\u2600\ufe0f" : "\ud83c\udf19"}
+    </button>
+  );
+}
 
 function SidebarLink({ category, small }: { category: (typeof topLevel)[number]; small?: boolean }) {
   const to = dedicatedRoutes[category.id] ?? `/category/${category.slug}`;
