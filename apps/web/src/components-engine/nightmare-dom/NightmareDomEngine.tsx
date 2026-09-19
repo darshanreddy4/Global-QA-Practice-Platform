@@ -363,17 +363,19 @@ function Stage6MovingAndAd() {
       solved={claimed && adDismissed}
     >
       <div className="relative h-[140px] w-[260px] overflow-hidden rounded-md border border-slate-200 bg-slate-50">
-        <button
-          data-testid="claim-reward-btn"
-          style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}
-          onClick={() => {
-            setClaimed(true);
-            setField("stage6RewardClaimed", true);
-          }}
-          className="absolute rounded-md bg-emerald-600 px-3 py-2 text-xs font-medium text-white"
-        >
-          Claim Reward
-        </button>
+        {!claimed && (
+          <button
+            data-testid="claim-reward-btn"
+            style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}
+            onClick={() => {
+              setClaimed(true);
+              setField("stage6RewardClaimed", true);
+            }}
+            className="absolute rounded-md bg-emerald-600 px-3 py-2 text-xs font-medium text-white"
+          >
+            Claim Reward
+          </button>
+        )}
         {adVisible && (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-900/70">
             <div className="rounded-md bg-white p-3 text-center shadow-lg">
@@ -394,6 +396,10 @@ function Stage6MovingAndAd() {
         )}
       </div>
       <p className="mt-1 text-[11px] text-slate-400">Ad interval: every ~5s for ~2.2s.</p>
+      <ul className="mt-1.5 space-y-0.5 text-xs">
+        <li className={claimed ? "text-emerald-700" : "text-slate-400"}>{claimed ? "\u2713 Reward claimed" : "\u25cb Reward not yet claimed"}</li>
+        <li className={adDismissed ? "text-emerald-700" : "text-slate-400"}>{adDismissed ? "\u2713 Ad dismissed" : "\u25cb Ad not yet dismissed"}</li>
+      </ul>
     </StageShell>
   );
 }
