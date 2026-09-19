@@ -5,6 +5,13 @@ import { useStoreCartStore } from "../../store/storeCartStore";
 import { postStoreEvent } from "../../services/storeBroadcast";
 import { PRODUCTS, CATEGORIES } from "./storeData";
 
+const COMPARE_PRODUCT_IDS = ["f1", "f4", "f6"]; // Nike Air Runner, Reebok Classic Move, Bata Everyday Walk
+const COMPARE_ATTRIBUTES = ["Best Price", "Top Rated", "Fast Delivery"];
+
+function slugify(s: string) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+}
+
 /** Standalone real storefront (opened in its own tab from ECOM-001) \u2014 a real,
  * multi-page e-commerce site: browse/search/filter/favorite/add-to-cart here,
  * checkout on /store/checkout, track delivery on /store/orders/:id. Every
@@ -16,6 +23,12 @@ export function StoreHomePage() {
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("All");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [compareSelections, setCompareSelections] = useState<Record<string, boolean>>({});
+
+  const toggleCompareCell = (productId: string, attr: string) => {
+    const key = `${productId}__${attr}`;
+    setCompareSelections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const filtered = useMemo(() => {
     const min = minPrice.trim() === "" ? -Infinity : Number(minPrice);
@@ -130,6 +143,44 @@ export function StoreHomePage() {
           })}
         </div>
         {filtered.length === 0 && <p className="mt-6 text-center text-sm text-slate-400">No products match your search/filter.</p>}
+
+        {category === "Footwear" && (
+          <div className="mt-8" data-testid="compare-shoes-section">
+            <p className="mb-2 text-sm font-medium text-slate-700">
+              Compare Shoes {"\u2014"} check the boxes that matter to you for each shoe
+            </p>
+            <table className="w-full text-left text-sm" data-testid="compare-shoes-table">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-500">
+                  <th className="py-2">Shoe</th>
+                  {COMPARE_ATTRIBUTES.map((attr) => (
+                    <th key={attr} className="py-2 text-center">{attr}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARE_PRODUCT_IDS.map((productId) => {
+                  const product = PRODUCTS.find((p) => p.id === productId)!;
+                  return (
+                    <tr key={productId} className="border-b border-slate-100">
+                      <td className="py-1.5">{product.emoji} {product.name}</td>
+                      {COMPARE_ATTRIBUTES.map((attr) => (
+                        <td key={attr} className="py-1.5 text-center">
+                          <input
+                            type="checkbox"
+                            data-testid={`compare-cell-${slugify(product.name)}-${slugify(attr)}`}
+                            checked={!!compareSelections[`${productId}__${attr}`]}
+                            onChange={() => toggleCompareCell(productId, attr)}
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </main>
     </div>
   );

@@ -16,6 +16,7 @@ import { StoreHomePage } from "../pages/store/StoreHomePage";
 import { StoreCartPage } from "../pages/store/StoreCartPage";
 import { StoreWishlistPage } from "../pages/store/StoreWishlistPage";
 import { StoreCheckoutPage } from "../pages/store/StoreCheckoutPage";
+import { StorePaymentWidgetFrame } from "../pages/store/StorePaymentWidgetFrame";
 import { StoreOrderTrackingPage } from "../pages/store/StoreOrderTrackingPage";
 import { useAuthStore } from "../store/authStore";
 import { ErrorBoundary } from "./ErrorBoundary";
@@ -44,6 +45,7 @@ export function App() {
           <Route path="/store/cart" element={<ErrorBoundary><StoreCartPage /></ErrorBoundary>} />
           <Route path="/store/wishlist" element={<ErrorBoundary><StoreWishlistPage /></ErrorBoundary>} />
           <Route path="/store/checkout" element={<ErrorBoundary><StoreCheckoutPage /></ErrorBoundary>} />
+          <Route path="/store/payment-widget" element={<ErrorBoundary><StorePaymentWidgetFrame /></ErrorBoundary>} />
           <Route path="/store/orders/:orderId" element={<ErrorBoundary><StoreOrderTrackingPage /></ErrorBoundary>} />
           <Route element={<AppShell />}>
             <Route path="/" element={<DashboardPage />} />

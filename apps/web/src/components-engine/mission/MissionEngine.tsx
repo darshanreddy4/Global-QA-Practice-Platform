@@ -40,7 +40,7 @@ function StepHeader({ steps, current }: { steps: string[]; current: number }) {
 
 // ================= E-Commerce: real separate storefront (opens a new tab) =================
 
-type OrderRecord = { orderId: string; total: number; shippingCity: string; paymentMethod: string; productNames: string[]; cancelled: boolean };
+type OrderRecord = { orderId: string; total: number; shippingCity: string; paymentMethod: string; productNames: string[]; deliveryDate: string; cancelled: boolean };
 
 function EcommerceRealSiteMission() {
   const { setField } = useChallengeField();
@@ -68,7 +68,7 @@ function EcommerceRealSiteMission() {
       if (event.type === "order-placed") {
         setOrders((prev) => [
           ...prev,
-          { orderId: event.orderId, total: event.total, shippingCity: event.shippingCity, paymentMethod: event.paymentMethod, productNames: event.productNames, cancelled: false },
+          { orderId: event.orderId, total: event.total, shippingCity: event.shippingCity, paymentMethod: event.paymentMethod, productNames: event.productNames, deliveryDate: event.deliveryDate, cancelled: false },
         ]);
       }
       if (event.type === "order-cancelled") {
@@ -93,6 +93,7 @@ function EcommerceRealSiteMission() {
       setField("finalOrderPaymentMethod", finalOrder.paymentMethod);
       setField("finalOrderProductNames", finalOrder.productNames.join(", "));
       setField("finalOrderCity", finalOrder.shippingCity);
+      setField("finalOrderDeliveryDate", finalOrder.deliveryDate);
     }
   }, [orders, setField]);
 
