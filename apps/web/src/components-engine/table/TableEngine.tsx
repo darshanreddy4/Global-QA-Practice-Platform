@@ -13,6 +13,8 @@ export function TableEngine({ variant }: TableEngineProps) {
       return <PaginationSelectionTable />;
     case "inline-edit-expandable":
       return <InlineEditExpandableTable />;
+    case "dual-list-combine-checkbox":
+      return <DualListCombineCheckbox />;
     default:
       return <p className="text-sm text-red-600">Unknown table variant: {variant}</p>;
   }
@@ -430,5 +432,150 @@ function InlineEditExpandableTable() {
         ))}
       </tbody>
     </table>
+  );
+}
+
+// ---------- Dual sortable checkbox lists -> combined result table ----------
+
+const FIRST_NAMES = ["Meera", "Arjun", "Priya", "Karan", "Divya", "Rohit"];
+const LAST_NAMES = ["Nair", "Iyer", "Chopra", "Mehta", "Rao", "Kapoor"];
+
+type SortDir = "asc" | "desc" | null;
+
+function sortNames(names: string[], dir: SortDir) {
+  if (dir === "asc") return [...names].sort((a, b) => a.localeCompare(b));
+  if (dir === "desc") return [...names].sort((a, b) => b.localeCompare(a));
+  return names;
+}
+
+function NameCheckboxTable({
+  title,
+  names,
+  sortDir,
+  onSortDir,
+  selected,
+  onSelect,
+  testidPrefix,
+}: {
+  title: string;
+  names: string[];
+  sortDir: SortDir;
+  onSortDir: (dir: SortDir) => void;
+  selected: string | null;
+  onSelect: (name: string | null) => void;
+  testidPrefix: string;
+}) {
+  const sorted = useMemo(() => sortNames(names, sortDir), [names, sortDir]);
+
+  return (
+    <table className="w-full text-left text-sm" data-testid={`${testidPrefix}-table`}>
+      <thead>
+        <tr className="border-b border-slate-200 text-slate-500">
+          <th className="py-2">
+            <div className="flex items-center gap-1.5">
+              <span>{title}</span>
+              <button
+                type="button"
+                data-testid={`${testidPrefix}-sort-asc`}
+                aria-label="Sort ascending"
+                aria-pressed={sortDir === "asc"}
+                onClick={() => onSortDir("asc")}
+                className={`rounded px-1 ${sortDir === "asc" ? "bg-brand-100 text-brand-700" : "hover:bg-slate-100"}`}
+              >
+                {"\u2191"}
+              </button>
+              <button
+                type="button"
+                data-testid={`${testidPrefix}-sort-desc`}
+                aria-label="Sort descending"
+                aria-pressed={sortDir === "desc"}
+                onClick={() => onSortDir("desc")}
+                className={`rounded px-1 ${sortDir === "desc" ? "bg-brand-100 text-brand-700" : "hover:bg-slate-100"}`}
+              >
+                {"\u2193"}
+              </button>
+            </div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {sorted.map((name) => (
+          <tr key={name} className="border-b border-slate-100">
+            <td className="py-1.5">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  data-testid={`${testidPrefix}-checkbox-${name}`}
+                  checked={selected === name}
+                  onChange={(e) => onSelect(e.target.checked ? name : null)}
+                />
+                {name}
+              </label>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function DualListCombineCheckbox() {
+  const { setField } = useChallengeField();
+  const [firstSortDir, setFirstSortDir] = useState<SortDir>(null);
+  const [lastSortDir, setLastSortDir] = useState<SortDir>(null);
+  const [selectedFirst, setSelectedFirst] = useState<string | null>(null);
+  const [selectedLast, setSelectedLast] = useState<string | null>(null);
+
+  const combinedFullName = selectedFirst && selectedLast ? `${selectedFirst} ${selectedLast}` : "";
+
+  useEffect(() => {
+    setField("selectedFirstName", selectedFirst ?? "");
+    setField("selectedLastName", selectedLast ?? "");
+    setField("combinedFullName", combinedFullName);
+  }, [selectedFirst, selectedLast, combinedFullName, setField]);
+
+  return (
+    <div className="max-w-2xl space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <NameCheckboxTable
+          title="First Name"
+          names={FIRST_NAMES}
+          sortDir={firstSortDir}
+          onSortDir={setFirstSortDir}
+          selected={selectedFirst}
+          onSelect={setSelectedFirst}
+          testidPrefix="first-name"
+        />
+        <NameCheckboxTable
+          title="Last Name"
+          names={LAST_NAMES}
+          sortDir={lastSortDir}
+          onSortDir={setLastSortDir}
+          selected={selectedLast}
+          onSelect={setSelectedLast}
+          testidPrefix="last-name"
+        />
+      </div>
+
+      <div>
+        <p className="mb-1 text-sm font-medium text-slate-700">Combined Result</p>
+        <table className="w-full text-left text-sm" data-testid="combined-result-table">
+          <thead>
+            <tr className="border-b border-slate-200 text-slate-500">
+              <th className="py-2">First Name</th>
+              <th className="py-2">Last Name</th>
+              <th className="py-2">Full Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="py-1.5" data-testid="combined-first-name">{selectedFirst || "\u2014"}</td>
+              <td className="py-1.5" data-testid="combined-last-name">{selectedLast || "\u2014"}</td>
+              <td className="py-1.5 font-medium text-slate-800" data-testid="combined-full-name">{combinedFullName || "\u2014"}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
