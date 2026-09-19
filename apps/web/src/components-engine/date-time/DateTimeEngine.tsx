@@ -105,41 +105,148 @@ function DateRangePicker() {
   );
 }
 
-const SLOTS = ["09:00", "09:30", "10:00", "10:30", "11:00", "14:00"];
-const BOOKED = new Set(["09:00", "14:00"]);
+function toDateInputValue(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+// Auto-generated business-hours grid (09:00-18:00, 30-min steps) instead of a
+// short hardcoded list — this is what actually makes the slot set "dynamic".
+const ALL_SLOTS = Array.from({ length: 19 }, (_, i) => {
+  const totalMinutes = 9 * 60 + i * 30;
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+});
+
+const MIN_DURATION_MIN = 30;
+const MAX_DURATION_MIN = 90;
+
+function slotMinutes(slot: string): number {
+  const [h, m] = slot.split(":").map(Number);
+  return h * 60 + m;
+}
 
 function DynamicTimeSlots() {
   const { setField } = useChallengeField();
-  const [selected, setSelected] = useState("");
+  const today = useMemo(() => toDateInputValue(new Date()), []);
+  const [date, setDate] = useState(today);
+  const [checkInTime, setCheckInTime] = useState("");
+  const [checkOutTime, setCheckOutTime] = useState("");
+
+  const isPastSlot = (slot: string) => {
+    if (date > today) return false;
+    if (date < today) return true;
+    return new Date(`${date}T${slot}:00`).getTime() <= Date.now();
+  };
+
+  const onDateChange = (value: string) => {
+    setDate(value);
+    setCheckInTime("");
+    setCheckOutTime("");
+    setField("checkInTime", "");
+    setField("checkOutTime", "");
+  };
+
+  const onCheckInSelect = (slot: string) => {
+    setCheckInTime(slot);
+    // Changing/choosing a new check-in always clears the check-out — the only
+    // way to "redo" the appointment is via the check-in slot, per spec.
+    setCheckOutTime("");
+    setField("checkInTime", slot);
+    setField("checkOutTime", "");
+  };
+
+  const onCheckOutSelect = (slot: string) => {
+    setCheckOutTime(slot);
+    setField("checkOutTime", slot);
+    setField("appointmentDurationMinutes", slotMinutes(slot) - slotMinutes(checkInTime));
+  };
+
+  const duration = checkInTime && checkOutTime ? slotMinutes(checkOutTime) - slotMinutes(checkInTime) : null;
 
   return (
-    <div>
-      <p className="mb-2 text-sm font-medium text-slate-700">Available appointment slots</p>
-      <div className="flex flex-wrap gap-2">
-        {SLOTS.map((slot) => {
-          const booked = BOOKED.has(slot);
-          return (
-            <button
-              key={slot}
-              disabled={booked}
-              data-testid={`slot-${slot.replace(":", "")}`}
-              onClick={() => {
-                setSelected(slot);
-                setField("selectedTimeSlot", slot);
-              }}
-              className={`rounded-md border px-3 py-1.5 text-sm ${
-                booked
-                  ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-300"
-                  : selected === slot
-                    ? "border-brand-600 bg-brand-600 text-white"
-                    : "border-slate-300 text-slate-700 hover:border-brand-400"
-              }`}
-            >
-              {slot}
-            </button>
-          );
-        })}
+    <div className="max-w-lg space-y-4">
+      <div>
+        <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="appointment-date">Date</label>
+        <input
+          id="appointment-date"
+          type="date"
+          data-testid="appointment-date-input"
+          min={today}
+          value={date}
+          onChange={(e) => onDateChange(e.target.value)}
+          className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+        />
       </div>
+
+      <div>
+        <p className="mb-2 text-sm font-medium text-slate-700">Check-in time</p>
+        <div className="flex flex-wrap gap-2">
+          {ALL_SLOTS.map((slot) => {
+            const disabled = isPastSlot(slot);
+            const active = checkInTime === slot;
+            return (
+              <button
+                key={slot}
+                type="button"
+                disabled={disabled}
+                data-testid={`checkin-slot-${slot.replace(":", "")}`}
+                onClick={() => onCheckInSelect(slot)}
+                className={`rounded-md border px-3 py-1.5 text-sm ${
+                  disabled
+                    ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-300"
+                    : active
+                      ? "border-brand-600 bg-brand-600 text-white"
+                      : "border-slate-300 text-slate-700 hover:border-brand-400"
+                }`}
+              >
+                {slot}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-1 text-xs text-slate-400">Past date/time slots are automatically disabled.</p>
+      </div>
+
+      <div>
+        <p className="mb-2 text-sm font-medium text-slate-700">Check-out time</p>
+        <div className="flex flex-wrap gap-2">
+          {ALL_SLOTS.map((slot) => {
+            const gap = checkInTime ? slotMinutes(slot) - slotMinutes(checkInTime) : -1;
+            const disabled = !checkInTime || gap < MIN_DURATION_MIN || gap > MAX_DURATION_MIN;
+            const active = checkOutTime === slot;
+            return (
+              <button
+                key={slot}
+                type="button"
+                disabled={disabled}
+                data-testid={`checkout-slot-${slot.replace(":", "")}`}
+                onClick={() => onCheckOutSelect(slot)}
+                className={`rounded-md border px-3 py-1.5 text-sm ${
+                  disabled
+                    ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-300"
+                    : active
+                      ? "border-brand-600 bg-brand-600 text-white"
+                      : "border-slate-300 text-slate-700 hover:border-brand-400"
+                }`}
+              >
+                {slot}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-1 text-xs text-slate-400">
+          {checkInTime
+            ? `Only slots ${MIN_DURATION_MIN}-${MAX_DURATION_MIN} minutes after ${checkInTime} are selectable. Pick a different check-in time to change this window.`
+            : "Select a check-in time first."}
+        </p>
+      </div>
+
+      {duration !== null && (
+        <p className="text-sm font-medium text-slate-700" data-testid="appointment-duration">
+          Appointment duration: {duration} minute(s)
+        </p>
+      )}
     </div>
   );
 }
