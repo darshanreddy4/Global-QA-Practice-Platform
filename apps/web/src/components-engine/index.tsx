@@ -32,6 +32,7 @@ import { StoragePanelEngine } from "./storage-panel/StoragePanelEngine";
 import { PopupEngine } from "./popup/PopupEngine";
 import { ApiPanelEngine } from "./api-panel/ApiPanelEngine";
 import { MissionEngine } from "./mission/MissionEngine";
+import { NightmareDomEngine } from "./nightmare-dom/NightmareDomEngine";
 
 /**
  * Central lookup from ChallengeDefinition.component -> engine component.
@@ -104,6 +105,8 @@ export function EngineComponent({ challenge }: { challenge: ChallengeDefinition 
       return <ApiPanelEngine variant={challenge.variant} />;
     case "mission":
       return <MissionEngine variant={challenge.variant} />;
+    case "nightmare-dom":
+      return <NightmareDomEngine variant={challenge.variant} />;
     default:
       return (
         <p className="text-sm text-slate-500">

@@ -118,7 +118,7 @@ export const categories: CategoryNode[] = [
   // Missions & benchmarks
   c({ id: "missions", slug: "missions", title: "Missions", parentId: null, order: 11, status: "planned", phase: 11, description: "End-to-end business-requirement workflows." }),
   c({ id: "ultimate-challenge", slug: "ultimate-challenge", title: "Ultimate Challenge", parentId: null, order: 12, status: "planned", phase: 11, description: "Every component category on one page." }),
-  c({ id: "nightmare-dom", slug: "nightmare-dom", title: "Nightmare DOM", parentId: null, order: 13, status: "planned", phase: 11, description: "Advanced combined locator/sync practice." }),
+  c({ id: "nightmare-dom", slug: "nightmare-dom", title: "Nightmare DOM", parentId: null, order: 13, status: "available", phase: 11, description: "Advanced combined locator/sync practice." }),
 
   // Platform
   c({ id: "analytics", slug: "analytics", title: "Analytics", parentId: null, order: 14, status: "planned", phase: 12, description: "Personal and platform-wide analytics." }),

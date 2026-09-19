@@ -38,6 +38,7 @@ import { networkApiTestingChallenges } from "./challenges/network-api-testing";
 import { apiInterceptionMockingChallenges } from "./challenges/api-interception-mocking";
 import { apiDrivenUiChallenges } from "./challenges/api-driven-ui";
 import { realApplicationsChallenges } from "./challenges/real-applications";
+import { nightmareDomChallenges } from "./challenges/nightmare-dom";
 
 export const challengeRegistry: ChallengeDefinition[] = [
   ...basicUiActionsChallenges,
@@ -79,6 +80,7 @@ export const challengeRegistry: ChallengeDefinition[] = [
   ...apiInterceptionMockingChallenges,
   ...apiDrivenUiChallenges,
   ...realApplicationsChallenges,
+  ...nightmareDomChallenges,
 ];
 
 /** Fails loudly if any hardcoded challenge drifts from the shared schema (spec §9). */

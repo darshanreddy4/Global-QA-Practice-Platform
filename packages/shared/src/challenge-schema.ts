@@ -50,6 +50,7 @@ export const ComponentKeyEnum = z.enum([
   "error-page",
   "drag-drop",
   "window-lab",
+  "nightmare-dom",
 ]);
 export type ComponentKey = z.infer<typeof ComponentKeyEnum>;
 

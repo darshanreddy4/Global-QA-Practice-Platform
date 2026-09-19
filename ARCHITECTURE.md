@@ -523,7 +523,7 @@ or renamed. "Sim" = safe simulated version documented with its technical limitat
 | 52 | Difficulty System | Phase 1 | part of core schema |
 | 53 | Challenge Metadata | Phase 1 | part of core schema |
 | 54 | Everything-in-One-Page Challenge | Phase 11 | after enough components exist |
-| 55 | Nightmare DOM | Phase 11 | |
+| 55 | Nightmare DOM | Phase 11 ✅ | delivered — single combined benchmark page, `nightmare-dom` component, NIGHTMARE-001 (8 stages) |
 | 56 | QA Mission System | Phase 11 | Missions |
 | 57 | Ultimate E-Commerce Mission | Phase 11 | |
 | 58 | Component Guidance System | Phase 1 | core, built first |
