@@ -248,6 +248,10 @@ function ClickAndHold() {
   const [state, setState] = useState<"idle" | "stopped">("idle");
   const startRef = useRef<number>(0);
   const rafRef = useRef<number>();
+  // Tracks whether a real mousedown started the hold — without this, onMouseLeave
+  // firing after a plain hover (no mousedown at all) would read startRef's default
+  // value of 0, making `elapsed` a huge number and falsely arming the stop instantly.
+  const holdingRef = useRef(false);
 
   const tick = () => {
     const elapsed = Date.now() - startRef.current;
@@ -259,11 +263,14 @@ function ClickAndHold() {
   };
 
   const onDown = () => {
+    holdingRef.current = true;
     startRef.current = Date.now();
     rafRef.current = requestAnimationFrame(tick);
   };
 
   const onUp = () => {
+    if (!holdingRef.current) return;
+    holdingRef.current = false;
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     const elapsed = Date.now() - startRef.current;
     if (elapsed >= 1500) {

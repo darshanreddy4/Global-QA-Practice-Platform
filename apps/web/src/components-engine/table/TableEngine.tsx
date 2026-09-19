@@ -19,27 +19,34 @@ export function TableEngine({ variant }: TableEngineProps) {
 }
 
 const DEPARTMENTS = ["Engineering", "Finance", "Sales", "Support"];
-const EMPLOYEES = Array.from({ length: 25 }, (_, i) => ({
+const NON_ENGINEERING_DEPARTMENTS = ["Finance", "Sales", "Support"];
+// Indices 0-5 are Engineering; every other index cycles ONLY through the non-Engineering
+// departments, guaranteeing exactly 6 Engineering rows (previously `DEPARTMENTS[i % 4]`
+// already produced Engineering at i=8,12,16,20,24 too, silently inflating the filtered
+// count to 11 and making the "expected 6" self-check impossible to ever pass).
+const SEEDED_EMPLOYEES = Array.from({ length: 25 }, (_, i) => ({
   id: i + 1,
   name: `Employee ${String.fromCharCode(65 + (i % 26))}${i}`,
-  department: DEPARTMENTS[i % 4],
+  department: i < 6 ? "Engineering" : NON_ENGINEERING_DEPARTMENTS[i % NON_ENGINEERING_DEPARTMENTS.length],
 }));
-// Force exactly 6 Engineering rows for a deterministic assertion.
-const SEEDED_EMPLOYEES = EMPLOYEES.map((e, i) => (i < 6 ? { ...e, department: "Engineering" } : e));
 
 function SortFilterTable() {
   const { setField } = useChallengeField();
-  const [sortAsc, setSortAsc] = useState(false);
+  const [sortDir, setSortDir] = useState<"asc" | "desc" | null>(null);
   const [dept, setDept] = useState("All");
 
   const rows = useMemo(() => {
     let list = [...SEEDED_EMPLOYEES];
     if (dept !== "All") list = list.filter((e) => e.department === dept);
-    if (sortAsc) list.sort((a, b) => a.name.localeCompare(b.name));
+    if (sortDir === "asc") list.sort((a, b) => a.name.localeCompare(b.name));
+    else if (sortDir === "desc") list.sort((a, b) => b.name.localeCompare(a.name));
     return list;
-  }, [sortAsc, dept]);
+  }, [sortDir, dept]);
 
-  useEffect(() => setField("visibleRowCount", rows.length), [rows, setField]);
+  useEffect(() => {
+    setField("visibleRowCount", rows.length);
+    setField("firstVisibleEmployeeName", rows[0]?.name ?? "");
+  }, [rows, setField]);
 
   return (
     <div>
@@ -57,8 +64,30 @@ function SortFilterTable() {
       <table className="w-full text-left text-sm" data-testid="employee-table">
         <thead>
           <tr className="border-b border-slate-200 text-slate-500">
-            <th className="cursor-pointer py-2" data-testid="sort-name-header" onClick={() => setSortAsc((s) => !s)}>
-              Name {sortAsc ? "\u2191" : ""}
+            <th className="py-2">
+              <div className="flex items-center gap-1.5">
+                <span>Name</span>
+                <button
+                  type="button"
+                  data-testid="sort-name-asc"
+                  aria-label="Sort ascending"
+                  aria-pressed={sortDir === "asc"}
+                  onClick={() => setSortDir("asc")}
+                  className={`rounded px-1 ${sortDir === "asc" ? "bg-brand-100 text-brand-700" : "hover:bg-slate-100"}`}
+                >
+                  {"\u2191"}
+                </button>
+                <button
+                  type="button"
+                  data-testid="sort-name-desc"
+                  aria-label="Sort descending"
+                  aria-pressed={sortDir === "desc"}
+                  onClick={() => setSortDir("desc")}
+                  className={`rounded px-1 ${sortDir === "desc" ? "bg-brand-100 text-brand-700" : "hover:bg-slate-100"}`}
+                >
+                  {"\u2193"}
+                </button>
+              </div>
             </th>
             <th className="py-2">Department</th>
           </tr>
