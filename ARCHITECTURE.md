@@ -14,11 +14,14 @@ delivered (Browser Windows & Tabs, Iframe Laboratory incl. nested iframes, Shado
 shadow roots, Cookies, Browser Storage, Popups). Phase 6 ✅ delivered (Network/API Testing full CRUD
 playground, API Interception & Mocking against a real interception target, expanded API-Driven UI).
 Phase 7 ✅ delivered (MFA/OTP login, role-based access control, session-expiry testing, client-side
-progress tracking on the Dashboard, global Search & Discovery). Post-Phase-7 hardening added 129
+progress tracking on the Dashboard, global Search & Discovery). Post-Phase-7 hardening added 138+
 challenges live across ~40+ categories, plus real self-service user accounts (email or phone
 registration, bcrypt-hashed passwords), an automation-friendly API-login → session-link bootstrap
 flow (`/api/auth/session-link`, see §6), and access-tier/monetization extension points that are
-defined but not yet enforced anywhere (see §6a). Phase 8 onward remain on the roadmap below.
+defined but not yet enforced anywhere (see §6a). Phase 10 ✅ partially delivered (Real-World Mini
+Applications: E-Commerce checkout, Banking OTP fund transfer, Travel flight booking — each a full
+multi-step journey via the new `mission` engine component; HR/Education/Healthcare mini-apps and the
+Framework Lab category remain planned). Phase 8 and 9 remain on the roadmap below.
 
 ---
 
@@ -514,8 +517,8 @@ or renamed. "Sim" = safe simulated version documented with its technical limitat
 | 46 | Performance Testing Practice | Phase 9 | |
 | 47 | Visual Testing | Phase 9 | |
 | 48 | Cross-Browser Practice | Cross-cutting | documented in Testing Strategy §18 |
-| 49 | Real-World Mini Applications | Phase 10 | E-commerce/Banking/Travel/HR/Education/Healthcare |
-| 50 | Framework-Specific Practice | Phase 10 | informational tags on every challenge from Phase 1 onward |
+| 49 | Real-World Mini Applications | Phase 10 ✅ | delivered — E-Commerce checkout, Banking OTP transfer, Travel flight booking (multi-step `mission` engine component); HR/Education/Healthcare remain planned |
+| 50 | Framework-Specific Practice | Phase 10 ✅ | delivered since Phase 1 — every challenge already carries a `frameworks[]` tag (selenium/playwright/cypress) shown in its guidance panel |
 | 51 | Practice Modes | Phase 2 | Learn/Practice/Challenge/Real Project/Random/Interview |
 | 52 | Difficulty System | Phase 1 | part of core schema |
 | 53 | Challenge Metadata | Phase 1 | part of core schema |

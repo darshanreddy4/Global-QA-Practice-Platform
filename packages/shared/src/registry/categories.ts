@@ -107,10 +107,10 @@ export const categories: CategoryNode[] = [
   c({ id: "framework-lab", slug: "framework-lab", title: "Framework Lab", parentId: null, order: 9, status: "planned", phase: 10, description: "Framework-specific practice scenarios." }),
 
   // Real Applications
-  c({ id: "real-applications", slug: "real-applications", title: "Real Applications", parentId: null, order: 10, status: "planned", phase: 10, description: "Complete enterprise mini applications." }),
-  c({ id: "ecommerce", slug: "ecommerce", title: "E-Commerce", parentId: "real-applications", order: 1, status: "planned", phase: 10, description: "Login → cart → checkout → invoice." }),
-  c({ id: "banking", slug: "banking", title: "Banking Demo", parentId: "real-applications", order: 2, status: "planned", phase: 10, description: "OTP, transfer, statement — fictional data only." }),
-  c({ id: "travel", slug: "travel", title: "Travel", parentId: "real-applications", order: 3, status: "planned", phase: 10, description: "Search → seat selection → payment." }),
+  c({ id: "real-applications", slug: "real-applications", title: "Real Applications", parentId: null, order: 10, status: "available", phase: 10, description: "Complete enterprise mini applications." }),
+  c({ id: "ecommerce", slug: "ecommerce", title: "E-Commerce", parentId: "real-applications", order: 1, status: "available", phase: 10, description: "Login → cart → checkout → invoice." }),
+  c({ id: "banking", slug: "banking", title: "Banking Demo", parentId: "real-applications", order: 2, status: "available", phase: 10, description: "OTP, transfer, statement — fictional data only." }),
+  c({ id: "travel", slug: "travel", title: "Travel", parentId: "real-applications", order: 3, status: "available", phase: 10, description: "Search → seat selection → payment." }),
   c({ id: "hr", slug: "hr", title: "HR", parentId: "real-applications", order: 4, status: "planned", phase: 10, description: "Employees, leave, payroll, reports." }),
   c({ id: "education", slug: "education", title: "Education", parentId: "real-applications", order: 5, status: "planned", phase: 10, description: "Courses, assignments, results, certificates." }),
   c({ id: "healthcare", slug: "healthcare", title: "Healthcare Demo", parentId: "real-applications", order: 6, status: "planned", phase: 10, description: "Fictional patient/appointment demo." }),

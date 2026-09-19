@@ -31,6 +31,7 @@ import { CookiePanelEngine } from "./cookie-panel/CookiePanelEngine";
 import { StoragePanelEngine } from "./storage-panel/StoragePanelEngine";
 import { PopupEngine } from "./popup/PopupEngine";
 import { ApiPanelEngine } from "./api-panel/ApiPanelEngine";
+import { MissionEngine } from "./mission/MissionEngine";
 
 /**
  * Central lookup from ChallengeDefinition.component -> engine component.
@@ -101,6 +102,8 @@ export function EngineComponent({ challenge }: { challenge: ChallengeDefinition 
       return <PopupEngine variant={challenge.variant} />;
     case "api-panel":
       return <ApiPanelEngine variant={challenge.variant} />;
+    case "mission":
+      return <MissionEngine variant={challenge.variant} />;
     default:
       return (
         <p className="text-sm text-slate-500">
