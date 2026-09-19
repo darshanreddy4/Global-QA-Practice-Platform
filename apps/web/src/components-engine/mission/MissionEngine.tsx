@@ -1,14 +1,15 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Badge, Button, FormField, inputBaseClasses } from "../../design-system";
 import { useChallengeField } from "../../features/challenge-runner/ChallengeRunner";
+import { STORE_CHANNEL_NAME, type StoreEvent } from "../../services/storeBroadcast";
 
 export type MissionEngineProps = { variant: string };
 
 /** ONE engine component for the entire "Real Applications" mini-app missions. */
 export function MissionEngine({ variant }: MissionEngineProps) {
   switch (variant) {
-    case "ecommerce-checkout":
-      return <EcommerceCheckoutMission />;
+    case "ecommerce-real-site":
+      return <EcommerceRealSiteMission />;
     case "banking-fund-transfer":
       return <BankingFundTransferMission />;
     case "travel-flight-booking":
@@ -37,173 +38,89 @@ function StepHeader({ steps, current }: { steps: string[]; current: number }) {
   );
 }
 
-// ================= E-Commerce Checkout Mission =================
+// ================= E-Commerce: real separate storefront (opens a new tab) =================
 
-type CartLine = { id: string; name: string; price: number; qty: number };
-
-function EcommerceCheckoutMission() {
+function EcommerceRealSiteMission() {
   const { setField } = useChallengeField();
-  const [step, setStep] = useState(0);
-  const [cart, setCart] = useState<CartLine[]>([
-    { id: "mouse", name: "Wireless Mouse", price: 25, qty: 1 },
-    { id: "keyboard", name: "Mechanical Keyboard", price: 65, qty: 1 },
-    { id: "hub", name: "USB-C Hub", price: 30, qty: 1 },
-  ]);
-  const [couponInput, setCouponInput] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
-  const [shipping, setShipping] = useState({ fullName: "", address: "", city: "", postalCode: "", phone: "" });
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "upi" | "cod" | "">("");
-  const [card, setCard] = useState({ number: "", expiry: "", cvv: "" });
-  const [orderPlaced, setOrderPlaced] = useState(false);
-  const [orderId] = useState(() => `ORD-${100000 + Math.floor(Math.random() * 899999)}`);
+  const [log, setLog] = useState<string[]>([]);
+  const [favoritedProductName, setFavoritedProductName] = useState("");
+  const [cartLineCount, setCartLineCount] = useState(0);
+  const [cartSubtotal, setCartSubtotal] = useState(0);
+  const [orderId, setOrderId] = useState("");
+  const [orderTotal, setOrderTotal] = useState<number | null>(null);
+  const [shippingCity, setShippingCity] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [deliveryStatus, setDeliveryStatus] = useState("");
 
-  const subtotal = useMemo(() => cart.reduce((sum, l) => sum + l.price * l.qty, 0), [cart]);
-  const discount = appliedCoupon === "SAVE10" ? subtotal * 0.1 : 0;
-  const total = Math.round((subtotal - discount) * 100) / 100;
-
-  const setQty = (id: string, qty: number) => {
-    setCart((c) => c.map((l) => (l.id === id ? { ...l, qty: Math.max(1, qty) } : l)));
-  };
-
-  const applyCoupon = () => {
-    setAppliedCoupon(couponInput.trim().toUpperCase() === "SAVE10" ? "SAVE10" : null);
-  };
-
-  const shippingValid = Object.values(shipping).every((v) => v.trim().length > 0);
-
-  const placeOrder = () => {
-    setOrderPlaced(true);
-    setField("shippingFullName", shipping.fullName);
-    setField("shippingCity", shipping.city);
-    setField("orderTotal", total);
-    setField("paymentMethod", paymentMethod);
-    setField("orderPlaced", true);
-  };
-
-  const steps = ["Cart", "Shipping", "Payment", "Confirmation"];
+  useEffect(() => {
+    const channel = new BroadcastChannel(STORE_CHANNEL_NAME);
+    channel.onmessage = (e) => {
+      const event = e.data as StoreEvent;
+      setLog((l) => [...l, JSON.stringify(event)].slice(-8));
+      if (event.type === "favorite" && event.favorited) {
+        setFavoritedProductName(event.productName);
+        setField("favoritedProductName", event.productName);
+      }
+      if (event.type === "cart-updated") {
+        setCartLineCount(event.lineCount);
+        setCartSubtotal(event.subtotal);
+        setField("cartItemCount", event.lineCount);
+      }
+      if (event.type === "order-placed") {
+        setOrderId(event.orderId);
+        setOrderTotal(event.total);
+        setShippingCity(event.shippingCity);
+        setPaymentMethod(event.paymentMethod);
+        setField("orderId", event.orderId);
+        setField("orderTotal", event.total);
+        setField("shippingCity", event.shippingCity);
+        setField("paymentMethod", event.paymentMethod);
+        setField("orderPlaced", true);
+      }
+      if (event.type === "delivery-status") {
+        setDeliveryStatus(event.status);
+        setField("deliveryStatus", event.status);
+      }
+    };
+    return () => channel.close();
+  }, [setField]);
 
   return (
-    <div className="max-w-xl">
-      <StepHeader steps={steps} current={step} />
+    <div className="max-w-xl space-y-4">
+      <div className="rounded-md border border-brand-100 bg-brand-50/40 p-4 text-sm text-slate-700">
+        <p className="mb-2 font-semibold text-brand-800">A real, separate storefront</p>
+        <p>
+          AwesomeMart is a genuine multi-page e-commerce site (search &amp; category filters, favorites,
+          cart, checkout, order tracking) running in its own browser tab {"\u2014"} not embedded on this
+          page. Every milestone you complete there is reported back here in real time over a
+          BroadcastChannel, exactly like a real cross-application integration a QA engineer might test.
+        </p>
+      </div>
 
-      {step === 0 && (
-        <div className="space-y-3">
-          <table className="w-full text-left text-sm" data-testid="cart-table">
-            <thead>
-              <tr className="border-b border-slate-200 text-slate-500">
-                <th className="py-2">Product</th>
-                <th className="py-2">Price</th>
-                <th className="py-2">Qty</th>
-                <th className="py-2">Line total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cart.map((l) => (
-                <tr key={l.id} className="border-b border-slate-100">
-                  <td className="py-1.5">{l.name}</td>
-                  <td className="py-1.5">${l.price.toFixed(2)}</td>
-                  <td className="py-1.5">
-                    <input
-                      type="number"
-                      min={1}
-                      data-testid={`cart-qty-${l.id}`}
-                      value={l.qty}
-                      onChange={(e) => setQty(l.id, Number(e.target.value))}
-                      className="w-16 rounded-md border border-slate-300 px-2 py-1 text-sm"
-                    />
-                  </td>
-                  <td className="py-1.5">${(l.price * l.qty).toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <Button data-testid="launch-store-btn" onClick={() => window.open("/store", "_blank")}>
+        Open AwesomeMart in a new tab
+      </Button>
 
-          <div className="flex items-center gap-2">
-            <input
-              data-testid="coupon-input"
-              placeholder="Coupon code"
-              className={inputBaseClasses}
-              value={couponInput}
-              onChange={(e) => setCouponInput(e.target.value)}
-            />
-            <Button size="sm" variant="secondary" data-testid="apply-coupon-btn" onClick={applyCoupon}>Apply</Button>
-            {appliedCoupon && <Badge tone="success">SAVE10 applied</Badge>}
-          </div>
+      <div className="rounded-md border border-slate-200 bg-white p-4 text-sm" data-testid="mission-progress">
+        <p className="mb-2 font-medium text-slate-700">Live progress from AwesomeMart</p>
+        <ul className="space-y-1">
+          <li>Favorited product: <span data-testid="progress-favorited">{favoritedProductName || "\u2014"}</span></li>
+          <li>Cart line items: <span data-testid="progress-cart-count">{cartLineCount}</span> (subtotal ${cartSubtotal.toFixed(2)})</li>
+          <li>
+            Order: <span data-testid="progress-order-id">{orderId || "\u2014"}</span>
+            {orderTotal !== null && <span> (${orderTotal.toFixed(2)})</span>}
+          </li>
+          <li>Shipping city: <span data-testid="progress-shipping-city">{shippingCity || "\u2014"}</span></li>
+          <li>Payment method: <span data-testid="progress-payment-method">{paymentMethod || "\u2014"}</span></li>
+          <li>Delivery status: <span data-testid="progress-delivery-status">{deliveryStatus || "\u2014"}</span></li>
+        </ul>
+      </div>
 
-          <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm" data-testid="cart-summary">
-            <p>Subtotal: <span data-testid="cart-subtotal">${subtotal.toFixed(2)}</span></p>
-            <p>Discount: <span data-testid="cart-discount">${discount.toFixed(2)}</span></p>
-            <p className="font-semibold">Total: <span data-testid="cart-total">${total.toFixed(2)}</span></p>
-          </div>
-
-          <Button data-testid="to-shipping-btn" onClick={() => setStep(1)}>Proceed to Shipping</Button>
-        </div>
-      )}
-
-      {step === 1 && (
-        <div className="space-y-3">
-          <FormField label="Full name" htmlFor="shipFullName" required>
-            <input id="shipFullName" data-testid="shipping-fullname" className={inputBaseClasses} value={shipping.fullName} onChange={(e) => setShipping((s) => ({ ...s, fullName: e.target.value }))} />
-          </FormField>
-          <FormField label="Address" htmlFor="shipAddress" required>
-            <input id="shipAddress" data-testid="shipping-address" className={inputBaseClasses} value={shipping.address} onChange={(e) => setShipping((s) => ({ ...s, address: e.target.value }))} />
-          </FormField>
-          <FormField label="City" htmlFor="shipCity" required>
-            <input id="shipCity" data-testid="shipping-city" className={inputBaseClasses} value={shipping.city} onChange={(e) => setShipping((s) => ({ ...s, city: e.target.value }))} />
-          </FormField>
-          <FormField label="Postal code" htmlFor="shipPostal" required>
-            <input id="shipPostal" data-testid="shipping-postal" className={inputBaseClasses} value={shipping.postalCode} onChange={(e) => setShipping((s) => ({ ...s, postalCode: e.target.value }))} />
-          </FormField>
-          <FormField label="Phone" htmlFor="shipPhone" required>
-            <input id="shipPhone" data-testid="shipping-phone" className={inputBaseClasses} value={shipping.phone} onChange={(e) => setShipping((s) => ({ ...s, phone: e.target.value }))} />
-          </FormField>
-          <div className="flex gap-2">
-            <Button variant="secondary" data-testid="back-to-cart-btn" onClick={() => setStep(0)}>Back</Button>
-            <Button disabled={!shippingValid} data-testid="to-payment-btn" onClick={() => setStep(2)}>Continue to Payment</Button>
-          </div>
-        </div>
-      )}
-
-      {step === 2 && (
-        <div className="space-y-3">
-          <fieldset>
-            <legend className="mb-1.5 text-sm font-medium text-slate-700">Payment method</legend>
-            {(["card", "upi", "cod"] as const).map((m) => (
-              <label key={m} className="mr-4 inline-flex items-center gap-1.5 text-sm text-slate-700">
-                <input type="radio" name="paymentMethod" data-testid={`payment-${m}`} checked={paymentMethod === m} onChange={() => setPaymentMethod(m)} />
-                {m === "card" ? "Card" : m === "upi" ? "UPI" : "Cash on Delivery"}
-              </label>
-            ))}
-          </fieldset>
-          {paymentMethod === "card" && (
-            <div className="space-y-2">
-              <FormField label="Card number" htmlFor="cardNumber" required>
-                <input id="cardNumber" data-testid="card-number" className={inputBaseClasses} value={card.number} onChange={(e) => setCard((c) => ({ ...c, number: e.target.value }))} />
-              </FormField>
-              <div className="flex gap-2">
-                <FormField label="Expiry (MM/YY)" htmlFor="cardExpiry" required>
-                  <input id="cardExpiry" data-testid="card-expiry" className={inputBaseClasses} value={card.expiry} onChange={(e) => setCard((c) => ({ ...c, expiry: e.target.value }))} />
-                </FormField>
-                <FormField label="CVV" htmlFor="cardCvv" required>
-                  <input id="cardCvv" data-testid="card-cvv" className={inputBaseClasses} value={card.cvv} onChange={(e) => setCard((c) => ({ ...c, cvv: e.target.value }))} />
-                </FormField>
-              </div>
-            </div>
-          )}
-          <div className="flex gap-2">
-            <Button variant="secondary" data-testid="back-to-shipping-btn" onClick={() => setStep(1)}>Back</Button>
-            <Button disabled={!paymentMethod} data-testid="place-order-btn" onClick={() => { placeOrder(); setStep(3); }}>Place Order</Button>
-          </div>
-        </div>
-      )}
-
-      {step === 3 && orderPlaced && (
-        <div className="space-y-2 rounded-md border border-emerald-200 bg-emerald-50 p-4">
-          <p className="text-sm font-semibold text-emerald-800">Order confirmed!</p>
-          <p className="text-sm text-emerald-700" data-testid="order-id">Order ID: {orderId}</p>
-          <p className="text-sm text-emerald-700">Total charged: ${total.toFixed(2)}</p>
-          <p className="text-sm text-emerald-700">Shipping to: {shipping.fullName}, {shipping.city}</p>
-        </div>
+      {log.length > 0 && (
+        <details className="text-xs text-slate-400">
+          <summary className="cursor-pointer">Raw event log ({log.length})</summary>
+          <pre className="mt-1 overflow-auto rounded bg-slate-900 p-2 text-slate-100" data-testid="mission-activity-log">{log.join("\n")}</pre>
+        </details>
       )}
     </div>
   );

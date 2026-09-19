@@ -67,7 +67,7 @@ export function GlobalSearch() {
       <input
         ref={inputRef}
         data-testid="global-search-input"
-        placeholder="Search challenges, categories, frameworks\u2026"
+        placeholder="Search challenges, categories, frameworks…"
         className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         value={query}
         onChange={(e) => {

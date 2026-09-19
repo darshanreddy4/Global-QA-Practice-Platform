@@ -167,7 +167,7 @@ function SearchableSingle() {
         id="productSearch"
         data-testid="product-search-input"
         className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-        placeholder="Type to search\u2026"
+        placeholder="Type to search…"
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -506,7 +506,7 @@ function TypeToCreateFromTextfield() {
         <input
           data-testid="new-tag-input"
           className="flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm"
-          placeholder="Type a tag name\u2026"
+          placeholder="Type a tag name…"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addTag()}

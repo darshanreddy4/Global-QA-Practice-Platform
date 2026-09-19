@@ -12,6 +12,10 @@ import { AutomationAccessPage } from "../pages/AutomationAccessPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { TransactionChildPage } from "../pages/windowlab/TransactionChildPage";
 import { ReportChildPage } from "../pages/windowlab/ReportChildPage";
+import { StoreHomePage } from "../pages/store/StoreHomePage";
+import { StoreCartPage } from "../pages/store/StoreCartPage";
+import { StoreCheckoutPage } from "../pages/store/StoreCheckoutPage";
+import { StoreOrderTrackingPage } from "../pages/store/StoreOrderTrackingPage";
 import { useAuthStore } from "../store/authStore";
 import { ErrorBoundary } from "./ErrorBoundary";
 
@@ -33,6 +37,12 @@ export function App() {
               exactly like a real second tab/window would. */}
           <Route path="/window-lab/transaction" element={<ErrorBoundary><TransactionChildPage /></ErrorBoundary>} />
           <Route path="/window-lab/report" element={<ErrorBoundary><ReportChildPage /></ErrorBoundary>} />
+          {/* Standalone real storefront (ECOM-001 mission) — a genuine multi-page site
+              opened in its own tab; reports milestones back via BroadcastChannel. */}
+          <Route path="/store" element={<ErrorBoundary><StoreHomePage /></ErrorBoundary>} />
+          <Route path="/store/cart" element={<ErrorBoundary><StoreCartPage /></ErrorBoundary>} />
+          <Route path="/store/checkout" element={<ErrorBoundary><StoreCheckoutPage /></ErrorBoundary>} />
+          <Route path="/store/orders/:orderId" element={<ErrorBoundary><StoreOrderTrackingPage /></ErrorBoundary>} />
           <Route element={<AppShell />}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/practice" element={<PracticeCatalogPage />} />
