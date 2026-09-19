@@ -40,23 +40,22 @@ function StepHeader({ steps, current }: { steps: string[]; current: number }) {
 
 // ================= E-Commerce: real separate storefront (opens a new tab) =================
 
+type OrderRecord = { orderId: string; total: number; shippingCity: string; paymentMethod: string; productNames: string[]; cancelled: boolean };
+
 function EcommerceRealSiteMission() {
   const { setField } = useChallengeField();
   const [log, setLog] = useState<string[]>([]);
   const [favoritedProductName, setFavoritedProductName] = useState("");
   const [cartLineCount, setCartLineCount] = useState(0);
   const [cartSubtotal, setCartSubtotal] = useState(0);
-  const [orderId, setOrderId] = useState("");
-  const [orderTotal, setOrderTotal] = useState<number | null>(null);
-  const [shippingCity, setShippingCity] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("");
+  const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [deliveryStatus, setDeliveryStatus] = useState("");
 
   useEffect(() => {
     const channel = new BroadcastChannel(STORE_CHANNEL_NAME);
     channel.onmessage = (e) => {
       const event = e.data as StoreEvent;
-      setLog((l) => [...l, JSON.stringify(event)].slice(-8));
+      setLog((l) => [...l, JSON.stringify(event)].slice(-10));
       if (event.type === "favorite" && event.favorited) {
         setFavoritedProductName(event.productName);
         setField("favoritedProductName", event.productName);
@@ -67,15 +66,13 @@ function EcommerceRealSiteMission() {
         setField("cartItemCount", event.lineCount);
       }
       if (event.type === "order-placed") {
-        setOrderId(event.orderId);
-        setOrderTotal(event.total);
-        setShippingCity(event.shippingCity);
-        setPaymentMethod(event.paymentMethod);
-        setField("orderId", event.orderId);
-        setField("orderTotal", event.total);
-        setField("shippingCity", event.shippingCity);
-        setField("paymentMethod", event.paymentMethod);
-        setField("orderPlaced", true);
+        setOrders((prev) => [
+          ...prev,
+          { orderId: event.orderId, total: event.total, shippingCity: event.shippingCity, paymentMethod: event.paymentMethod, productNames: event.productNames, cancelled: false },
+        ]);
+      }
+      if (event.type === "order-cancelled") {
+        setOrders((prev) => prev.map((o) => (o.orderId === event.orderId ? { ...o, cancelled: true } : o)));
       }
       if (event.type === "delivery-status") {
         setDeliveryStatus(event.status);
@@ -85,15 +82,29 @@ function EcommerceRealSiteMission() {
     return () => channel.close();
   }, [setField]);
 
+  // Derive the "did any order get cancelled" + "what's the final (non-cancelled) order"
+  // facts every time the order list changes \u2014 supports the two-order (place, cancel,
+  // place again) scenario without the message handler needing to know the full history.
+  useEffect(() => {
+    setField("firstOrderCancelled", orders.some((o) => o.cancelled));
+    const finalOrder = [...orders].reverse().find((o) => !o.cancelled);
+    if (finalOrder) {
+      setField("finalOrderPlaced", true);
+      setField("finalOrderPaymentMethod", finalOrder.paymentMethod);
+      setField("finalOrderProductNames", finalOrder.productNames.join(", "));
+      setField("finalOrderCity", finalOrder.shippingCity);
+    }
+  }, [orders, setField]);
+
   return (
     <div className="max-w-xl space-y-4">
       <div className="rounded-md border border-brand-100 bg-brand-50/40 p-4 text-sm text-slate-700">
         <p className="mb-2 font-semibold text-brand-800">A real, separate storefront</p>
         <p>
-          AwesomeMart is a genuine multi-page e-commerce site (search &amp; category filters, favorites,
-          cart, checkout, order tracking) running in its own browser tab {"\u2014"} not embedded on this
-          page. Every milestone you complete there is reported back here in real time over a
-          BroadcastChannel, exactly like a real cross-application integration a QA engineer might test.
+          AwesomeMart is a genuine multi-page e-commerce site (search &amp; category/price-range filters,
+          wishlist, cart, checkout, order tracking + cancellation) running in its own browser tab {"\u2014"}{" "}
+          not embedded on this page. Every milestone you complete there is reported back here in real time
+          over a BroadcastChannel, exactly like a real cross-application integration a QA engineer might test.
         </p>
       </div>
 
@@ -104,16 +115,23 @@ function EcommerceRealSiteMission() {
       <div className="rounded-md border border-slate-200 bg-white p-4 text-sm" data-testid="mission-progress">
         <p className="mb-2 font-medium text-slate-700">Live progress from AwesomeMart</p>
         <ul className="space-y-1">
-          <li>Favorited product: <span data-testid="progress-favorited">{favoritedProductName || "\u2014"}</span></li>
+          <li>Wishlisted product: <span data-testid="progress-favorited">{favoritedProductName || "\u2014"}</span></li>
           <li>Cart line items: <span data-testid="progress-cart-count">{cartLineCount}</span> (subtotal ${cartSubtotal.toFixed(2)})</li>
-          <li>
-            Order: <span data-testid="progress-order-id">{orderId || "\u2014"}</span>
-            {orderTotal !== null && <span> (${orderTotal.toFixed(2)})</span>}
-          </li>
-          <li>Shipping city: <span data-testid="progress-shipping-city">{shippingCity || "\u2014"}</span></li>
-          <li>Payment method: <span data-testid="progress-payment-method">{paymentMethod || "\u2014"}</span></li>
           <li>Delivery status: <span data-testid="progress-delivery-status">{deliveryStatus || "\u2014"}</span></li>
         </ul>
+        {orders.length > 0 && (
+          <div className="mt-3 border-t border-slate-100 pt-2" data-testid="progress-orders">
+            <p className="mb-1 font-medium text-slate-700">Orders placed</p>
+            <ul className="space-y-1">
+              {orders.map((o) => (
+                <li key={o.orderId} data-testid={`progress-order-${o.orderId}`}>
+                  {o.orderId}: {o.productNames.join(", ")} {"\u2014"} ${o.total.toFixed(2)} ({o.paymentMethod.toUpperCase()}, {o.shippingCity}){" "}
+                  {o.cancelled ? <Badge tone="danger">Cancelled</Badge> : <Badge tone="success">Active</Badge>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {log.length > 0 && (

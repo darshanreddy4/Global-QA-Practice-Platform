@@ -22,6 +22,7 @@ export function StoreCheckoutPage() {
   const placeOrderNow = () => {
     if (!paymentMethod) return;
     const orderId = `ORD-${100000 + Math.floor(Math.random() * 899999)}`;
+    const productNames = lines.map((l) => l.product!.name);
     placeOrder({
       orderId,
       total: subtotal,
@@ -36,6 +37,7 @@ export function StoreCheckoutPage() {
       shippingFullName: shipping.fullName,
       shippingCity: shipping.city,
       paymentMethod,
+      productNames,
     });
     clearCart();
     navigate(`/store/orders/${orderId}`);

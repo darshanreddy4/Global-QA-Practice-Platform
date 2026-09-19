@@ -10,6 +10,7 @@ export function StoreOrderTrackingPage() {
   const { orderId } = useParams();
   const { lastOrder } = useStoreCartStore();
   const [stageIndex, setStageIndex] = useState(0);
+  const [cancelled, setCancelled] = useState(false);
 
   const order = lastOrder?.orderId === orderId ? lastOrder : null;
   const status = STAGES[stageIndex];
@@ -20,6 +21,14 @@ export function StoreOrderTrackingPage() {
     if (orderId) {
       useStoreCartStore.getState().setDeliveryStatus(orderId, STAGES[nextIndex]);
       postStoreEvent({ type: "delivery-status", orderId, status: STAGES[nextIndex] });
+    }
+  };
+
+  const cancelOrder = () => {
+    setCancelled(true);
+    if (orderId) {
+      useStoreCartStore.getState().setDeliveryStatus(orderId, "Cancelled");
+      postStoreEvent({ type: "order-cancelled", orderId });
     }
   };
 
@@ -60,13 +69,19 @@ export function StoreOrderTrackingPage() {
               </span>
             ))}
           </div>
-          <p className="mt-2 text-sm text-slate-600" data-testid="current-delivery-status">Current status: {status}</p>
+          <p className="mt-2 text-sm text-slate-600" data-testid="current-delivery-status">
+            Current status: {cancelled ? "Cancelled" : status}
+          </p>
         </div>
 
-        {status !== "Delivered" && (
-          <Button data-testid="advance-status-btn" onClick={advance}>Advance to next status</Button>
+        {!cancelled && status !== "Delivered" && (
+          <div className="flex gap-2">
+            <Button data-testid="advance-status-btn" onClick={advance}>Advance to next status</Button>
+            <Button variant="secondary" data-testid="cancel-order-btn" onClick={cancelOrder}>Cancel Order</Button>
+          </div>
         )}
-        {status === "Delivered" && <p className="text-sm font-semibold text-emerald-700">Delivered! Order complete.</p>}
+        {!cancelled && status === "Delivered" && <p className="text-sm font-semibold text-emerald-700">Delivered! Order complete.</p>}
+        {cancelled && <p className="text-sm font-semibold text-red-600" data-testid="order-cancelled-message">Order cancelled.</p>}
       </main>
     </div>
   );

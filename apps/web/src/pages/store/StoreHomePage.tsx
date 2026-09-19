@@ -14,14 +14,19 @@ export function StoreHomePage() {
   const { favorites, cart, toggleFavorite, addToCart } = useStoreCartStore();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("All");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
 
   const filtered = useMemo(() => {
+    const min = minPrice.trim() === "" ? -Infinity : Number(minPrice);
+    const max = maxPrice.trim() === "" ? Infinity : Number(maxPrice);
     return PRODUCTS.filter((p) => {
       const matchesCategory = category === "All" || p.category === category;
       const matchesSearch = p.name.toLowerCase().includes(search.trim().toLowerCase());
-      return matchesCategory && matchesSearch;
+      const matchesPrice = p.price >= min && p.price <= max;
+      return matchesCategory && matchesSearch && matchesPrice;
     });
-  }, [search, category]);
+  }, [search, category, minPrice, maxPrice]);
 
   const cartUnits = cart.reduce((sum, l) => sum + l.qty, 0);
 
@@ -54,14 +59,14 @@ export function StoreHomePage() {
             {"\u{1F6D2}"} Cart
             {cartUnits > 0 && <Badge tone="info">{cartUnits}</Badge>}
           </Link>
-          <span className="text-sm text-slate-500" data-testid="favorites-count">
-            {"\u2665"} {favorites.size}
-          </span>
+          <Link to="/store/wishlist" data-testid="wishlist-link" className="text-sm font-medium text-slate-700 hover:text-brand-600">
+            {"\u2665"} Wishlist ({favorites.size})
+          </Link>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-6">
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           {CATEGORIES.map((c) => (
             <button
               key={c}
@@ -76,6 +81,24 @@ export function StoreHomePage() {
               {c}
             </button>
           ))}
+          <span className="ml-2 text-xs text-slate-400">Price range:</span>
+          <input
+            type="number"
+            data-testid="price-min-input"
+            placeholder="Min"
+            value={minPrice}
+            onChange={(e) => setMinPrice(e.target.value)}
+            className="w-20 rounded-md border border-slate-300 px-2 py-1 text-sm"
+          />
+          <span className="text-xs text-slate-400">to</span>
+          <input
+            type="number"
+            data-testid="price-max-input"
+            placeholder="Max"
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(e.target.value)}
+            className="w-20 rounded-md border border-slate-300 px-2 py-1 text-sm"
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
