@@ -35,6 +35,21 @@ function LanguageSwitcherStorefront() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [verifyState, setVerifyState] = useState<"idle" | "checking" | "match" | "mismatch">("idle");
 
+  const [cart, setCart] = useState<{ id: string; name: string; price: string; qty: number }[]>([]);
+  const [cartPanelOpen, setCartPanelOpen] = useState(false);
+  const [wishlist, setWishlist] = useState<Set<string>>(new Set());
+  const [wishlistPanelOpen, setWishlistPanelOpen] = useState(false);
+  const [orderPlaced, setOrderPlaced] = useState<string | null>(null);
+
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [address, setAddress] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [subscribe, setSubscribe] = useState(false);
+  const [accountError, setAccountError] = useState("");
+  const [accountCreated, setAccountCreated] = useState(false);
+
   useEffect(() => {
     (async () => {
       const langRes = await apiRequest<{ languages: Language[] }>("/lmt/languages");
@@ -52,6 +67,16 @@ function LanguageSwitcherStorefront() {
     setField("loginButtonText", keys.LOGIN_BTN);
     setField("addToCartButtonText", keys.ADD_TO_CART_BTN);
   }, [language, keys, setField]);
+
+  const totalQty = cart.reduce((sum, line) => sum + line.qty, 0);
+
+  useEffect(() => {
+    if (totalQty > 0) setField("cartItemCount", totalQty);
+  }, [totalQty, setField]);
+
+  useEffect(() => {
+    if (wishlist.size > 0) setField("wishlistToggled", true);
+  }, [wishlist, setField]);
 
   const t = (key: string, fallback: string) => keys[key] ?? fallback;
 
@@ -74,6 +99,58 @@ function LanguageSwitcherStorefront() {
     if (match) setField("lmtApiVerified", true);
   };
 
+  const addToCart = (p: (typeof PRODUCTS)[number]) => {
+    setCart((c) => {
+      const existing = c.find((line) => line.id === p.id);
+      if (existing) return c.map((line) => (line.id === p.id ? { ...line, qty: line.qty + 1 } : line));
+      return [...c, { id: p.id, name: p.name, price: p.price, qty: 1 }];
+    });
+  };
+
+  const removeFromCart = (id: string) => setCart((c) => c.filter((line) => line.id !== id));
+
+  const buyNow = (p: (typeof PRODUCTS)[number]) => {
+    addToCart(p);
+    setOrderPlaced(p.name);
+  };
+
+  const checkout = () => {
+    if (cart.length === 0) return;
+    setOrderPlaced(cart.map((line) => `${line.name} x${line.qty}`).join(", "));
+    setCart([]);
+    setCartPanelOpen(false);
+  };
+
+  const toggleWishlist = (id: string) => {
+    setWishlist((w) => {
+      const next = new Set(w);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const createAccount = () => {
+    if (!fullName.trim() || !email.trim() || !password.trim() || !address.trim()) {
+      setAccountError(t("FIELD_REQUIRED_MSG", "All fields are required."));
+      setAccountCreated(false);
+      return;
+    }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      setAccountError("Enter a valid email address.");
+      setAccountCreated(false);
+      return;
+    }
+    if (password.length < 6) {
+      setAccountError("Password must be at least 6 characters.");
+      setAccountCreated(false);
+      return;
+    }
+    setAccountError("");
+    setAccountCreated(true);
+    setField("accountCreated", true);
+  };
+
   return (
     <div className="max-w-4xl space-y-4">
       <div className="rounded-lg border border-brand-100 bg-brand-50/40 p-4 text-sm text-slate-700">
@@ -83,9 +160,21 @@ function LanguageSwitcherStorefront() {
           element's <code>data-lmt-key</code> attribute), and its displayed VALUE comes back from{" "}
           <code>GET /api/lmt/keys</code> for whichever language your session (<code>X-Session-Key</code>)
           currently has selected. Locate elements by <code>data-testid</code>/<code>data-lmt-key</code>,
-          never by visible text &#8212; the text changes every time the language does.
+          never by visible text &#8212; the text changes every time the language does. Cart, wishlist,
+          account creation and checkout are fully working, exactly like a real storefront.
         </p>
       </div>
+
+      {orderPlaced && (
+        <div data-testid="order-confirmation-banner" className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
+          <span data-lmt-key="ORDER_PLACED_MSG">
+            {t("ORDER_PLACED_MSG", "Order placed successfully!")} ({orderPlaced})
+          </span>
+          <button data-testid="order-confirmation-close" onClick={() => setOrderPlaced(null)} className="text-xs font-medium hover:underline">
+            {"\u2715"}
+          </button>
+        </div>
+      )}
 
       <Card className="overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 bg-slate-900 px-4 py-3 text-white">
@@ -131,12 +220,48 @@ function LanguageSwitcherStorefront() {
               {t("LOGIN_BTN", "Login")}
             </button>
           )}
-          <span data-testid="lang-wishlist-link" data-lmt-key="WISHLIST_LABEL" className="text-xs">
-            {"\u2661"} {t("WISHLIST_LABEL", "Wishlist")}
-          </span>
-          <span data-testid="lang-cart-link" data-lmt-key="CART_LABEL" className="text-xs">
-            {"\ud83d\uded2"} {t("CART_LABEL", "Cart")} (0)
-          </span>
+          <div className="relative">
+            <button data-testid="lang-wishlist-link" data-lmt-key="WISHLIST_LABEL" onClick={() => setWishlistPanelOpen((o) => !o)} className="text-xs hover:underline">
+              {wishlist.size > 0 ? "\u2665" : "\u2661"} {t("WISHLIST_LABEL", "Wishlist")} ({wishlist.size})
+            </button>
+            {wishlistPanelOpen && (
+              <div data-testid="lang-wishlist-panel" className="absolute right-0 top-full z-10 mt-1 w-52 rounded-md border border-slate-200 bg-white p-2 text-slate-700 shadow-lg">
+                {wishlist.size === 0 ? (
+                  <p className="px-1 py-1 text-xs text-slate-400">{t("CART_EMPTY_MSG", "Nothing here yet")}</p>
+                ) : (
+                  PRODUCTS.filter((p) => wishlist.has(p.id)).map((p) => (
+                    <p key={p.id} className="px-1 py-1 text-xs">{p.name}</p>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+          <div className="relative">
+            <button data-testid="lang-cart-link" data-lmt-key="CART_LABEL" onClick={() => setCartPanelOpen((o) => !o)} className="text-xs hover:underline">
+              {"\ud83d\uded2"} {t("CART_LABEL", "Cart")} ({totalQty})
+            </button>
+            {cartPanelOpen && (
+              <div data-testid="lang-cart-panel" className="absolute right-0 top-full z-10 mt-1 w-64 rounded-md border border-slate-200 bg-white p-2 text-slate-700 shadow-lg">
+                {cart.length === 0 ? (
+                  <p className="px-1 py-1 text-xs text-slate-400" data-lmt-key="CART_EMPTY_MSG">{t("CART_EMPTY_MSG", "Your cart is empty")}</p>
+                ) : (
+                  <>
+                    {cart.map((line) => (
+                      <div key={line.id} data-testid={`lang-cart-line-${line.id}`} className="flex items-center justify-between gap-2 border-b border-slate-100 px-1 py-1.5 text-xs last:border-0">
+                        <span>{line.name} x{line.qty}</span>
+                        <button data-testid={`lang-cart-remove-${line.id}`} data-lmt-key="REMOVE_BTN" onClick={() => removeFromCart(line.id)} className="text-red-600 hover:underline">
+                          {t("REMOVE_BTN", "Remove")}
+                        </button>
+                      </div>
+                    ))}
+                    <button data-testid="lang-checkout-btn" data-lmt-key="CHECKOUT_BTN" onClick={checkout} className="mt-2 w-full rounded-md bg-brand-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-brand-700">
+                      {t("CHECKOUT_BTN", "Checkout")}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-4 border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-medium text-slate-600">
@@ -158,20 +283,38 @@ function LanguageSwitcherStorefront() {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {PRODUCTS.map((p) => (
-              <div key={p.id} className="rounded-lg border border-slate-200 p-3 text-center">
+              <div key={p.id} className="relative rounded-lg border border-slate-200 p-3 text-center">
+                <button
+                  data-testid={`lang-wishlist-toggle-${p.id}`}
+                  onClick={() => toggleWishlist(p.id)}
+                  aria-label="Toggle wishlist"
+                  className="absolute right-2 top-2 text-base text-red-500"
+                >
+                  {wishlist.has(p.id) ? "\u2665" : "\u2661"}
+                </button>
                 <div className="text-3xl">{p.emoji}</div>
                 <p className="mt-1 text-sm font-medium text-slate-800">{p.name}</p>
                 <p className="text-xs text-slate-500">
                   <span data-lmt-key="PRICE_LABEL">{t("PRICE_LABEL", "Price")}</span>: {p.price}
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
-                  <span data-lmt-key="QUANTITY_LABEL">{t("QUANTITY_LABEL", "Quantity")}</span>: 1
+                  <span data-lmt-key="QUANTITY_LABEL">{t("QUANTITY_LABEL", "Quantity")}</span>: {cart.find((line) => line.id === p.id)?.qty ?? 1}
                 </p>
                 <div className="mt-2 flex flex-col gap-1.5">
-                  <button data-testid={`lang-add-to-cart-btn-${p.id}`} data-lmt-key="ADD_TO_CART_BTN" className="rounded-md bg-amber-400 px-2 py-1 text-xs font-medium text-slate-900 hover:bg-amber-500">
+                  <button
+                    data-testid={`lang-add-to-cart-btn-${p.id}`}
+                    data-lmt-key="ADD_TO_CART_BTN"
+                    onClick={() => addToCart(p)}
+                    className="rounded-md bg-amber-400 px-2 py-1 text-xs font-medium text-slate-900 hover:bg-amber-500"
+                  >
                     {t("ADD_TO_CART_BTN", "Add to Cart")}
                   </button>
-                  <button data-testid={`lang-buy-now-btn-${p.id}`} data-lmt-key="BUY_NOW_BTN" className="rounded-md bg-orange-500 px-2 py-1 text-xs font-medium text-white hover:bg-orange-600">
+                  <button
+                    data-testid={`lang-buy-now-btn-${p.id}`}
+                    data-lmt-key="BUY_NOW_BTN"
+                    onClick={() => buyNow(p)}
+                    className="rounded-md bg-orange-500 px-2 py-1 text-xs font-medium text-white hover:bg-orange-600"
+                  >
                     {t("BUY_NOW_BTN", "Buy Now")}
                   </button>
                 </div>
@@ -185,27 +328,33 @@ function LanguageSwitcherStorefront() {
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FormField label={t("FULL_NAME_LABEL", "Full Name")} htmlFor="lang-full-name">
-                <input id="lang-full-name" data-testid="lang-full-name-input" data-lmt-key="FULL_NAME_LABEL" className={inputBaseClasses} />
+                <input id="lang-full-name" value={fullName} onChange={(e) => setFullName(e.target.value)} data-testid="lang-full-name-input" data-lmt-key="FULL_NAME_LABEL" className={inputBaseClasses} />
               </FormField>
               <FormField label={t("EMAIL_LABEL", "Email Address")} htmlFor="lang-email">
-                <input id="lang-email" data-testid="lang-email-input" data-lmt-key="EMAIL_LABEL" className={inputBaseClasses} />
+                <input id="lang-email" value={email} onChange={(e) => setEmail(e.target.value)} data-testid="lang-email-input" data-lmt-key="EMAIL_LABEL" className={inputBaseClasses} />
               </FormField>
               <FormField label={t("PASSWORD_LABEL", "Password")} htmlFor="lang-password">
-                <input id="lang-password" type="password" data-testid="lang-password-input" data-lmt-key="PASSWORD_LABEL" className={inputBaseClasses} />
+                <input id="lang-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} data-testid="lang-password-input" data-lmt-key="PASSWORD_LABEL" className={inputBaseClasses} />
               </FormField>
               <FormField label={t("ADDRESS_LABEL", "Delivery Address")} htmlFor="lang-address">
-                <input id="lang-address" data-testid="lang-address-input" data-lmt-key="ADDRESS_LABEL" className={inputBaseClasses} />
+                <input id="lang-address" value={address} onChange={(e) => setAddress(e.target.value)} data-testid="lang-address-input" data-lmt-key="ADDRESS_LABEL" className={inputBaseClasses} />
               </FormField>
             </div>
             <label className="mt-3 flex items-center gap-1.5 text-xs text-slate-600">
-              <input type="checkbox" data-testid="lang-remember-me-checkbox" data-lmt-key="REMEMBER_ME_LABEL" />
+              <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} data-testid="lang-remember-me-checkbox" data-lmt-key="REMEMBER_ME_LABEL" />
               {t("REMEMBER_ME_LABEL", "Remember me")}
             </label>
             <label className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-600">
-              <input type="checkbox" data-testid="lang-subscribe-checkbox" data-lmt-key="SUBSCRIBE_LABEL" />
+              <input type="checkbox" checked={subscribe} onChange={(e) => setSubscribe(e.target.checked)} data-testid="lang-subscribe-checkbox" data-lmt-key="SUBSCRIBE_LABEL" />
               {t("SUBSCRIBE_LABEL", "Subscribe to newsletter")}
             </label>
-            <Button size="sm" className="mt-3" data-testid="lang-create-account-btn" data-lmt-key="CREATE_ACCOUNT_BTN">
+            {accountError && <p data-testid="lang-account-error" className="mt-2 text-xs font-medium text-red-600">{accountError}</p>}
+            {accountCreated && (
+              <p data-testid="lang-account-success" data-lmt-key="ACCOUNT_CREATED_MSG" className="mt-2 text-xs font-medium text-emerald-700">
+                {t("ACCOUNT_CREATED_MSG", "Account created successfully!")}
+              </p>
+            )}
+            <Button size="sm" className="mt-3" data-testid="lang-create-account-btn" data-lmt-key="CREATE_ACCOUNT_BTN" onClick={createAccount}>
               {t("CREATE_ACCOUNT_BTN", "Create Account")}
             </Button>
           </div>
