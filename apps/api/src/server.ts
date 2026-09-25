@@ -11,6 +11,7 @@ import { challengesRouter } from "./modules/challenges/challenges.router";
 import { geoRouter } from "./modules/geo/geo.router";
 import { labRouter } from "./modules/lab/lab.router";
 import { apiLabRouter } from "./modules/lab/api-lab.router";
+import { lmtRouter } from "./modules/lmt/lmt.router";
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/geo", geoRouter);
 app.use("/api/lab", labRouter);
 app.use("/api/lab", apiLabRouter);
+app.use("/api/lmt", lmtRouter);
 app.use("/api", challengesRouter);
 
 app.use(notFoundHandler);

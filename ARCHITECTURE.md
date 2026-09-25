@@ -517,7 +517,7 @@ or renamed. "Sim" = safe simulated version documented with its technical limitat
 | 46 | Performance Testing Practice | Phase 9 | |
 | 47 | Visual Testing | Phase 9 | |
 | 48 | Cross-Browser Practice | Cross-cutting | documented in Testing Strategy §18 |
-| 49 | Real-World Mini Applications | Phase 10 ✅ | delivered — E-Commerce checkout, Banking OTP transfer, Travel flight booking (multi-step `mission` engine component); HR/Education/Healthcare remain planned |
+| 49 | Real-World Mini Applications | Phase 10 ✅ | delivered — E-Commerce checkout, Banking OTP transfer, Travel flight booking (multi-step `mission` engine component), Internationalization/i18n language-switcher storefront (`i18n-lab` component, LANG-001, real LMT key/value API); HR/Education/Healthcare remain planned |
 | 50 | Framework-Specific Practice | Phase 10 ✅ | delivered since Phase 1 — every challenge already carries a `frameworks[]` tag (selenium/playwright/cypress) shown in its guidance panel |
 | 51 | Practice Modes | Phase 2 | Learn/Practice/Challenge/Real Project/Random/Interview |
 | 52 | Difficulty System | Phase 1 | part of core schema |

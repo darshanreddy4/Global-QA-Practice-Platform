@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { HttpError } from "../../middleware/errorHandler";
 import { resetProductsForSession } from "./api-lab.router";
+import { resetLanguageForSession } from "../lmt/lmt.router";
 
 export const labRouter = Router();
 
@@ -143,6 +144,7 @@ labRouter.post("/reset", (req, res) => {
   failure500CallLog.delete(sessionKey);
   failure429CallLog.delete(sessionKey);
   resetProductsForSession(sessionKey);
+  resetLanguageForSession(sessionKey);
   res.json({ data: { ok: true } });
 });
 

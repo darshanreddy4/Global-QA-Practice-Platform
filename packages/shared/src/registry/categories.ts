@@ -114,6 +114,7 @@ export const categories: CategoryNode[] = [
   c({ id: "hr", slug: "hr", title: "HR", parentId: "real-applications", order: 4, status: "planned", phase: 10, description: "Employees, leave, payroll, reports." }),
   c({ id: "education", slug: "education", title: "Education", parentId: "real-applications", order: 5, status: "planned", phase: 10, description: "Courses, assignments, results, certificates." }),
   c({ id: "healthcare", slug: "healthcare", title: "Healthcare Demo", parentId: "real-applications", order: 6, status: "planned", phase: 10, description: "Fictional patient/appointment demo." }),
+  c({ id: "internationalization", slug: "internationalization", title: "Internationalization (i18n)", parentId: "real-applications", order: 7, status: "available", phase: 10, description: "Language-switcher storefront backed by a real translation-key (LMT) API." }),
 
   // Missions & benchmarks
   c({ id: "missions", slug: "missions", title: "Missions", parentId: null, order: 11, status: "planned", phase: 11, description: "End-to-end business-requirement workflows." }),
