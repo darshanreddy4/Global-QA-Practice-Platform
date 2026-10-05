@@ -16,20 +16,25 @@ export const imagesMediaChallenges: ChallengeDefinition[] = [
     accessibility: "expected-accessible",
     guidance: {
       whatItDoes:
-        "A 5-tile product gallery: 3 real, reliably-loading images (inline SVG, no external dependency), and 2 intentionally broken images with meaningful `alt` text and a visible fallback placeholder on error. One broken tile (\"Standing Desk\") also has a \"Retry\" button that swaps in a working image, simulating a real recovered network request.",
+        "A 5-tile product gallery: 3 real photographs that load normally, and 2 broken product images. One broken image never recovers; the other can be fixed by the user and should then load successfully.",
       dataNeeded: "None.",
       action:
-        "Observe the gallery: note which tiles show the fallback placeholder. Confirm the \"Ergonomic Chair\" tile's alt text is correct even though it never loads. Click \"Retry\" (data-testid=\"image-retry-desk\") on the \"Standing Desk\" tile and confirm it successfully loads afterward.",
+        "QA task: a bug report says some product images in this gallery are broken. Investigate the gallery and figure out, for each tile, whether it loaded, and if not, why. For \"Ergonomic Chair\", the image will never load \u2014 confirm the product is still properly labeled for screen-reader users even though no image renders. For \"Standing Desk\", find a way on the page to make the image load successfully, then confirm it actually did.",
       expectedResult:
-        "\"Ergonomic Chair\" permanently shows \"Image unavailable: Ergonomic Chair\" with alt=\"Ergonomic Chair\"; \"Standing Desk\" shows the same fallback until Retry is clicked, after which it renders a real image.",
+        "\"Ergonomic Chair\" permanently shows a fallback message but is still correctly labeled. \"Standing Desk\" starts broken too, but after you take the right action on the page, it renders a real photograph.",
       validationPoints: [
-        "imageAlt equals \"Ergonomic Chair\" even though that image never successfully loads",
-        "imageRetried is true only after the Retry button causes the image to actually load (a real onLoad event, not a timer)",
+        "The permanently-broken product still exposes the correct accessible name (alt text), independent of whether the image itself ever renders",
+        "The recoverable product is confirmed to have genuinely finished loading afterward (a real success event, not just an error message disappearing)",
       ],
       automationConcepts: [
         "Testing accessible-name presence independent of visual rendering",
         "img onError/onLoad event handling",
         "Verifying a retry/recovery flow actually re-fetches and succeeds, not just hides an error message",
+        "Locating the right control among several similar-looking tiles without relying on fixed visual position",
+      ],
+      hints: [
+        "Don't assume every tile behaves the same way \u2014 inspect each one individually before deciding what action, if any, it needs.",
+        "A tile's accessible name (alt text) and its visual load state are two separate things; test them independently.",
       ],
     },
     validation: [

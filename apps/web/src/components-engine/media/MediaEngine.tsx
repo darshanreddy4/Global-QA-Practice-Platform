@@ -16,21 +16,20 @@ export function MediaEngine({ variant }: MediaEngineProps) {
   }
 }
 
-/** Dependency-free "real" image \u2014 a generated inline SVG data URI, so working
- * tiles never depend on an external image host being reachable. */
-function svgPlaceholder(label: string, bg: string): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect width="300" height="200" fill="${bg}"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui, sans-serif" font-size="20" fill="#ffffff">${label}</text></svg>`;
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-}
-
-type GalleryItem = { id: string; alt: string; src: string; recoverable?: boolean };
+type GalleryItem = { id: string; alt: string; src: string; recoverable?: boolean; recoveredSrc?: string };
 
 const GALLERY: GalleryItem[] = [
   { id: "chair", alt: "Ergonomic Chair", src: "https://intentionally-broken.invalid/chair.jpg" },
-  { id: "desk", alt: "Standing Desk", src: "https://intentionally-broken.invalid/desk.jpg", recoverable: true },
-  { id: "monitor", alt: "Monitor Arm", src: svgPlaceholder("Monitor Arm", "#2563eb") },
-  { id: "lamp", alt: "Desk Lamp", src: svgPlaceholder("Desk Lamp", "#d97706") },
-  { id: "tray", alt: "Keyboard Tray", src: svgPlaceholder("Keyboard Tray", "#16a34a") },
+  {
+    id: "desk",
+    alt: "Standing Desk",
+    src: "https://intentionally-broken.invalid/desk.jpg",
+    recoverable: true,
+    recoveredSrc: "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=400&h=300&fit=crop&q=80",
+  },
+  { id: "monitor", alt: "Monitor Arm", src: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400&h=300&fit=crop&q=80" },
+  { id: "lamp", alt: "Desk Lamp", src: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=400&h=300&fit=crop&q=80" },
+  { id: "tray", alt: "Keyboard Tray", src: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&h=300&fit=crop&q=80" },
 ];
 
 function ImageGallery() {
@@ -48,7 +47,8 @@ function ImageGallery() {
   };
 
   const retry = (item: GalleryItem) => {
-    setRecoveredSrc((prev) => ({ ...prev, [item.id]: svgPlaceholder(item.alt, "#64748b") }));
+    if (!item.recoveredSrc) return;
+    setRecoveredSrc((prev) => ({ ...prev, [item.id]: item.recoveredSrc! }));
     setBrokenIds((prev) => {
       const next = new Set(prev);
       next.delete(item.id);
