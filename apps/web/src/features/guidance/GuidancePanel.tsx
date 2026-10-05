@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import type { ChallengeDefinition } from "@qaplatform/shared";
 import { Badge, DifficultyBadge } from "../../design-system";
 
@@ -9,6 +9,7 @@ import { Badge, DifficultyBadge } from "../../design-system";
  */
 export function GuidancePanel({ challenge }: { challenge: ChallengeDefinition }) {
   const { guidance } = challenge;
+  const [expanded, setExpanded] = useState(true);
   return (
     <section
       aria-label="Challenge guidance"
@@ -26,24 +27,36 @@ export function GuidancePanel({ challenge }: { challenge: ChallengeDefinition })
           <Badge tone="danger">Intentional accessibility defect</Badge>
         )}
         <span className="ml-auto text-xs text-slate-500">~{challenge.estimatedMinutes} min</span>
+        <button
+          type="button"
+          data-testid="guidance-toggle"
+          onClick={() => setExpanded((e) => !e)}
+          className="rounded-md border border-brand-200 bg-white px-2 py-0.5 text-xs font-medium text-brand-700 hover:bg-brand-50"
+        >
+          {expanded ? "Hide details \u25b4" : "Show details \u25be \u2014 jump straight to the test scenario"}
+        </button>
       </div>
 
       <h2 className="mt-2 text-base font-semibold text-slate-900">{challenge.title}</h2>
 
-      <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-        <GuidanceItem term="What it does" detail={guidance.whatItDoes} />
-        <GuidanceItem term="Data needed" detail={guidance.dataNeeded} />
-        <GuidanceItem term="Action to perform" detail={guidance.action} />
-        <GuidanceItem term="Expected result" detail={guidance.expectedResult} />
-      </dl>
+      {expanded && (
+        <>
+          <dl className="mt-3 columns-1 gap-x-6 sm:columns-2">
+            <GuidanceItem term="What it does" detail={guidance.whatItDoes} />
+            <GuidanceItem term="Data needed" detail={guidance.dataNeeded} />
+            <GuidanceItem term="Action to perform" detail={guidance.action} />
+            <GuidanceItem term="Expected result" detail={guidance.expectedResult} />
+          </dl>
 
-      <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-        <GuidanceList term="What to validate" items={guidance.validationPoints} />
-        <GuidanceList term="Automation concepts" items={guidance.automationConcepts} tone="info" />
-      </div>
+          <div className="mt-3 columns-1 gap-x-6 sm:columns-2">
+            <GuidanceList term="What to validate" items={guidance.validationPoints} />
+            <GuidanceList term="Automation concepts" items={guidance.automationConcepts} tone="info" />
+          </div>
 
-      {guidance.edgeCases && guidance.edgeCases.length > 0 && (
-        <GuidanceList term="Edge cases" items={guidance.edgeCases} tone="warning" className="mt-3" />
+          {guidance.edgeCases && guidance.edgeCases.length > 0 && (
+            <GuidanceList term="Edge cases" items={guidance.edgeCases} tone="warning" />
+          )}
+        </>
       )}
     </section>
   );
@@ -51,7 +64,7 @@ export function GuidancePanel({ challenge }: { challenge: ChallengeDefinition })
 
 function GuidanceItem({ term, detail }: { term: string; detail: string }) {
   return (
-    <div>
+    <div className="mb-3 break-inside-avoid-column">
       <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{term}</dt>
       <dd className="mt-0.5 text-sm text-slate-800">{detail}</dd>
     </div>
@@ -62,17 +75,15 @@ function GuidanceList({
   term,
   items,
   tone = "neutral",
-  className = "",
 }: {
   term: string;
   items: string[];
   tone?: "neutral" | "info" | "warning";
-  className?: string;
 }) {
   const toneClass =
     tone === "info" ? "text-brand-700" : tone === "warning" ? "text-amber-700" : "text-slate-800";
   return (
-    <div className={className}>
+    <div className="mb-3 break-inside-avoid-column">
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{term}</p>
       <ul className={`mt-0.5 list-inside list-disc space-y-0.5 text-sm ${toneClass}`}>
         {items.map((item, index) => (
