@@ -4,10 +4,10 @@ import type { ChallengeDefinition } from "../../challenge-schema";
 export const imagesMediaChallenges: ChallengeDefinition[] = [
   {
     id: "MEDIA-001",
-    title: "Broken Image with Accessible Alt Fallback",
+    title: "Image Gallery \u2014 Broken Images & Alt-Text Fallbacks",
     categoryId: "images-media",
     component: "media",
-    variant: "broken-image-alt-fallback",
+    variant: "image-gallery-broken-and-recoverable",
     behavior: ["static"],
     environment: ["none"],
     dataSource: "static/none",
@@ -15,25 +15,38 @@ export const imagesMediaChallenges: ChallengeDefinition[] = [
     frameworks: ["selenium", "playwright", "cypress"],
     accessibility: "expected-accessible",
     guidance: {
-      whatItDoes: "A product image with an intentionally broken `src` still exposes a meaningful `alt` text, and the UI shows a visible fallback placeholder on error.",
+      whatItDoes:
+        "A 5-tile product gallery: 3 real, reliably-loading images (inline SVG, no external dependency), and 2 intentionally broken images with meaningful `alt` text and a visible fallback placeholder on error. One broken tile (\"Standing Desk\") also has a \"Retry\" button that swaps in a working image, simulating a real recovered network request.",
       dataNeeded: "None.",
-      action: "Observe the broken image tile; do not fix it, just verify its fallback behavior.",
-      expectedResult: "A placeholder graphic and the text \"Image unavailable: Ergonomic Chair\" render in place of the broken image, and the `alt` attribute still equals \"Ergonomic Chair\".",
-      validationPoints: ["img alt attribute equals \"Ergonomic Chair\" even though the image fails to load", "onError fallback UI is visible"],
-      automationConcepts: ["Testing accessible-name presence independent of visual rendering", "img onError event handling", "Accessibility-first assertions"],
+      action:
+        "Observe the gallery: note which tiles show the fallback placeholder. Confirm the \"Ergonomic Chair\" tile's alt text is correct even though it never loads. Click \"Retry\" (data-testid=\"image-retry-desk\") on the \"Standing Desk\" tile and confirm it successfully loads afterward.",
+      expectedResult:
+        "\"Ergonomic Chair\" permanently shows \"Image unavailable: Ergonomic Chair\" with alt=\"Ergonomic Chair\"; \"Standing Desk\" shows the same fallback until Retry is clicked, after which it renders a real image.",
+      validationPoints: [
+        "imageAlt equals \"Ergonomic Chair\" even though that image never successfully loads",
+        "imageRetried is true only after the Retry button causes the image to actually load (a real onLoad event, not a timer)",
+      ],
+      automationConcepts: [
+        "Testing accessible-name presence independent of visual rendering",
+        "img onError/onLoad event handling",
+        "Verifying a retry/recovery flow actually re-fetches and succeeds, not just hides an error message",
+      ],
     },
-    validation: [{ kind: "equals", field: "imageAlt", expected: "Ergonomic Chair" }],
+    validation: [
+      { kind: "equals", field: "imageAlt", expected: "Ergonomic Chair" },
+      { kind: "truthy", field: "imageRetried" },
+    ],
     mode: { deterministic: true, randomAvailable: false },
-    estimatedMinutes: 2,
+    estimatedMinutes: 3,
     resettable: true,
     isActive: true,
   },
   {
     id: "MEDIA-002",
-    title: "Video Player — Play, Pause, Seek",
+    title: "Full-Featured Video Player \u2014 Play, Volume, Brightness, Captions",
     categoryId: "images-media",
     component: "media",
-    variant: "video-controls",
+    variant: "full-featured-video-player",
     behavior: ["static"],
     environment: ["none"],
     dataSource: "static/none",
@@ -41,17 +54,37 @@ export const imagesMediaChallenges: ChallengeDefinition[] = [
     frameworks: ["playwright", "cypress"],
     accessibility: "expected-accessible",
     guidance: {
-      whatItDoes: "A training video player exposes Play/Pause and a seek bar reporting current playback time.",
+      whatItDoes:
+        "A real HTML5 `<video>` element (not a simulated timer) with a custom control bar: Play/Pause (calls the real `.play()`/`.pause()` methods), a seek bar bound to real `currentTime`, a volume slider + mute toggle bound to real `.volume`/`.muted`, a brightness slider (CSS filter), a Fullscreen button (real Fullscreen API), and a CC button that toggles a REAL `<track kind=\"captions\">` WebVTT text track's `mode` between \"showing\" and \"hidden\".",
       dataNeeded: "None.",
-      action: "Click Play, let it run briefly, click Pause, then seek to 30 seconds.",
-      expectedResult: "Play toggles to Pause; the reported time freezes on pause; seeking updates the current time to 30.",
-      validationPoints: ["Playback state toggles between \"playing\" and \"paused\"", "currentTime equals 30 after seeking"],
-      automationConcepts: ["HTMLMediaElement property assertions (currentTime, paused)", "Time-based state polling"],
+      action:
+        "Click Play and confirm the time counter actually advances (it previously got stuck at 0 \u2014 that was a bug, now fixed). Click Pause. Drag the seek bar to 5 seconds. Drag the volume slider to 0.5. Click the CC button to enable captions and confirm caption text appears over the video.",
+      expectedResult: "Playback time genuinely advances while playing and freezes on pause; seeking updates currentTime to 5; volume reads 0.5; captions become visible once CC is enabled.",
+      validationPoints: [
+        "videoPlayed is true (the real HTMLMediaElement onPlay event fired)",
+        "videoPaused is true (the real onPause event fired after playback had actually started)",
+        "currentTime equals 5 after seeking",
+        "videoVolume equals 0.5 after adjusting the volume slider",
+        "ccEnabled is true after turning captions on",
+      ],
+      automationConcepts: [
+        "Real HTMLMediaElement property/event assertions (currentTime, duration, volume, muted, paused, play/pause/timeupdate/volumechange events)",
+        "TextTrack API (video.textTracks[0].mode) for closed-caption automation instead of a fake overlay",
+        "Polling/waiting for time-based state instead of asserting immediately after a seek",
+      ],
+      edgeCases: ["Dragging the brightness slider only changes a CSS filter \u2014 it is not part of required validation, but is a real, inspectable style change."],
     },
-    validation: [{ kind: "equals", field: "currentTime", expected: 30 }],
+    validation: [
+      { kind: "truthy", field: "videoPlayed" },
+      { kind: "truthy", field: "videoPaused" },
+      { kind: "equals", field: "currentTime", expected: 5 },
+      { kind: "equals", field: "videoVolume", expected: 0.5 },
+      { kind: "truthy", field: "ccEnabled" },
+    ],
     mode: { deterministic: true, randomAvailable: false },
-    estimatedMinutes: 3,
+    estimatedMinutes: 5,
     resettable: true,
     isActive: true,
   },
 ];
+
