@@ -31,8 +31,9 @@ export function AppShell() {
       <aside
         data-testid="app-sidebar"
         className={[
-          "w-64 shrink-0 overflow-y-auto border-r border-slate-200 bg-white",
-          "fixed inset-y-0 left-0 z-40 transition-transform duration-200 md:static md:z-auto md:translate-x-0",
+          "w-64 shrink-0 border-r border-slate-200 bg-white",
+          "fixed inset-y-0 left-0 z-40 transition-transform duration-200",
+          "md:sticky md:top-0 md:z-auto md:h-screen md:translate-x-0 md:transition-none",
           mobileNavOpen ? "translate-x-0" : "-translate-x-full",
         ].join(" ")}
       >
@@ -103,7 +104,7 @@ export function AppShell() {
           </div>
         </header>
         <main className="flex-1 px-4 py-6 sm:px-6">
-          <div className="mx-auto w-full max-w-[1400px]">
+          <div className="mx-auto w-full max-w-[1800px]">
             <ErrorBoundary key={location.pathname}>
               <Outlet />
             </ErrorBoundary>
