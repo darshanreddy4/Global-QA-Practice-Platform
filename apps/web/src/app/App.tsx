@@ -12,6 +12,8 @@ import { AutomationAccessPage } from "../pages/AutomationAccessPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { TransactionChildPage } from "../pages/windowlab/TransactionChildPage";
 import { ReportChildPage } from "../pages/windowlab/ReportChildPage";
+import { LinkLabNewTabPage } from "../pages/linklab/LinkLabNewTabPage";
+import { LinkLabFeedbackFormPage } from "../pages/linklab/LinkLabFeedbackFormPage";
 import { StoreHomePage } from "../pages/store/StoreHomePage";
 import { StoreCartPage } from "../pages/store/StoreCartPage";
 import { StoreWishlistPage } from "../pages/store/StoreWishlistPage";
@@ -39,6 +41,9 @@ export function App() {
               exactly like a real second tab/window would. */}
           <Route path="/window-lab/transaction" element={<ErrorBoundary><TransactionChildPage /></ErrorBoundary>} />
           <Route path="/window-lab/report" element={<ErrorBoundary><ReportChildPage /></ErrorBoundary>} />
+          {/* Standalone child-tab page for LINK-001 — a genuinely different page/URL
+              opened via a real target="_blank" link. */}
+          <Route path="/link-lab/new-tab" element={<ErrorBoundary><LinkLabNewTabPage /></ErrorBoundary>} />
           {/* Standalone real storefront (ECOM-001 mission) — a genuine multi-page site
               opened in its own tab; reports milestones back via BroadcastChannel. */}
           <Route path="/store" element={<ErrorBoundary><StoreHomePage /></ErrorBoundary>} />
@@ -54,6 +59,7 @@ export function App() {
             <Route path="/challenge/:id" element={<ChallengePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/link-lab/feedback-form" element={<LinkLabFeedbackFormPage />} />
             <Route path="/automation-access" element={<AutomationAccessPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
