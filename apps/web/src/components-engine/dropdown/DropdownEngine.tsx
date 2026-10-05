@@ -63,7 +63,7 @@ function StaticSingle() {
   );
 }
 
-const REVIEWERS = ["Priya Sharma", "Wei Chen", "Amara Okafor", "Diego Fernandez", "Sara Lindqvist", "Rohan Mehta"];
+const REVIEWERS = ["Darshan Sharma", "Wei Chen", "Amara Okafor", "Diego Fernandez", "Sara Lindqvist", "Rohan Mehta"];
 
 function StaticMulti() {
   const { setField } = useChallengeField();
@@ -386,7 +386,7 @@ function GroupedDisabled() {
   );
 }
 
-const APPROVERS = ["Priya Sharma", "Wei Chen", "Amara Okafor"];
+const APPROVERS = ["Darshan Sharma", "Wei Chen", "Amara Okafor"];
 
 function RadioEnablesDropdown() {
   const { setField } = useChallengeField();

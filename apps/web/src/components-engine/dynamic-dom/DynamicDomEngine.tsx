@@ -304,7 +304,7 @@ priority.click();
 {`driver.findElement(By.cssSelector("[data-testid='live-comment-input']")).sendKeys("Approved");
 driver.findElement(By.cssSelector("[data-testid='priority-medium']")).click();
 new Select(driver.findElement(By.cssSelector("[data-testid='assignee-select']")))
-    .selectByVisibleText("Priya Nair");
+    .selectByVisibleText("Darshan Nair");
 // Locate fresh immediately before each interaction — never hold a handle across a wait.`}
         </pre>
       </div>
@@ -406,7 +406,7 @@ function LiveTicketForm({ setField }: { setField: (field: string, value: unknown
           <option value="">Unassigned</option>
           <option value="Aisha Khan">Aisha Khan</option>
           <option value="Marcus Lee">Marcus Lee</option>
-          <option value="Priya Nair">Priya Nair</option>
+          <option value="Darshan Nair">Darshan Nair</option>
         </select>
       </FormField>
     </div>

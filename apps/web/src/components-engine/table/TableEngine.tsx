@@ -437,7 +437,7 @@ function InlineEditExpandableTable() {
 
 // ---------- Dual sortable checkbox lists -> combined result table ----------
 
-const FIRST_NAMES = ["Meera", "Arjun", "Priya", "Karan", "Divya", "Rohit"];
+const FIRST_NAMES = ["Meera", "Arjun", "Darshan", "Karan", "Divya", "Rohit"];
 const LAST_NAMES = ["Nair", "Iyer", "Chopra", "Mehta", "Rao", "Kapoor"];
 
 type SortDir = "asc" | "desc" | null;

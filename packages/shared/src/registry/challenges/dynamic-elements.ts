@@ -63,7 +63,7 @@ export const dynamicElementsChallenges: ChallengeDefinition[] = [
       validationPoints: [
         "Comment field value equals \"Approved\"",
         "Priority equals \"medium\"",
-        "Assignee equals \"Priya Nair\"",
+        "Assignee equals \"Darshan Nair\"",
         "The stale-reference check reports \"stale confirmed\" (captured radio detached from the document)",
       ],
       automationConcepts: [
@@ -76,7 +76,7 @@ export const dynamicElementsChallenges: ChallengeDefinition[] = [
     validation: [
       { kind: "equals", field: "liveComment", expected: "Approved" },
       { kind: "equals", field: "priority", expected: "medium" },
-      { kind: "equals", field: "assignee", expected: "Priya Nair" },
+      { kind: "equals", field: "assignee", expected: "Darshan Nair" },
       { kind: "truthy", field: "staleReferenceConfirmed" },
     ],
     mode: { deterministic: true, randomAvailable: false },

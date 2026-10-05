@@ -138,7 +138,7 @@ function HoverReveal() {
           }}
           className="flex items-center justify-between rounded-md border border-slate-200 px-4 py-3"
         >
-          <span className="text-sm text-slate-700">Priya Sharma &mdash; Senior QA Engineer</span>
+          <span className="text-sm text-slate-700">Darshan Sharma &mdash; Senior QA Engineer</span>
           <div data-testid="row-actions" className={hovered ? "flex gap-2 opacity-100" : "flex gap-2 opacity-0"}>
             <Button size="sm" variant="ghost">Edit</Button>
             <Button size="sm" variant="ghost">Delete</Button>

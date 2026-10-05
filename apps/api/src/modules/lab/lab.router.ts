@@ -26,7 +26,7 @@ labRouter.get("/username-availability", async (req, res, next) => {
   res.json({ data: { username, available: !TAKEN_USERNAMES.has(username.toLowerCase()) } });
 });
 
-const ASSIGNEES = ["Priya Sharma", "Wei Chen", "Amara Okafor", "Diego Fernandez"];
+const ASSIGNEES = ["Darshan Sharma", "Wei Chen", "Amara Okafor", "Diego Fernandez"];
 
 /** Backs DROPDOWN-010: deterministic ~2.5s load delay, triggered on dropdown open (not on page load). */
 labRouter.get("/assignees", async (req, res) => {

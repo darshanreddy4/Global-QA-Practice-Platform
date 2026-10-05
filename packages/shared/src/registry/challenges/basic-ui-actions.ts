@@ -100,7 +100,7 @@ export const basicUiActionsChallenges: ChallengeDefinition[] = [
     guidance: {
       whatItDoes: "Row-level action icons (Edit/Delete) are hidden until the row is hovered — a common enterprise table pattern.",
       dataNeeded: "None.",
-      action: "Hover over the \"Employee: Priya Sharma\" row.",
+      action: "Hover over the \"Employee: Darshan Sharma\" row.",
       expectedResult: "Edit and Delete icons become visible for that row only.",
       validationPoints: ["Icons have `visibility: visible` / are present only on the hovered row", "Icons hide again on mouse-leave"],
       automationConcepts: ["Hover action", "CSS visibility state assertion", "Mouse-leave behavior"],
