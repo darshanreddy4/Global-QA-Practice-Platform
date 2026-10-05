@@ -18,7 +18,7 @@ export const WEB_ORIGINS = (process.env.WEB_ORIGIN ?? "http://localhost:5173")
 export const WEB_ORIGIN = WEB_ORIGINS[0];
 
 // Cookies must be `secure` (HTTPS-only) in production. If the frontend and API are
-// deployed on DIFFERENT domains (e.g. frontend on Vercel, API on Render/Railway),
+// deployed on DIFFERENT domains (e.g. frontend on Netlify, API on Render/Railway),
 // set COOKIE_SAME_SITE=none so the browser will still send the session cookie
 // cross-site — SameSite=None additionally requires Secure, which is why it's tied
 // to production here rather than left independently configurable.

@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build --workspace packages/shared && npm run build --workspace apps/web"
+  publish = "apps/web/dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# SPA fallback so React Router handles client-side routes on a hard refresh/direct link.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

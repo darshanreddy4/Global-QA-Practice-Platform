@@ -16,7 +16,7 @@ import { lmtRouter } from "./modules/lmt/lmt.router";
 const app = express();
 
 // Required for correct client IPs / secure-cookie detection behind any reverse
-// proxy (Vercel, Render, Railway, etc.) — without this, rate limiting and
+// proxy (Netlify, Vercel, Render, Railway, etc.) — without this, rate limiting and
 // `secure` cookies misbehave in production.
 app.set("trust proxy", 1);
 

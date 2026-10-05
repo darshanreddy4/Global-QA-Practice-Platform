@@ -47,11 +47,20 @@ means the API **must run as a single persistent process**, not as stateless serv
 functions — a fresh serverless invocation would not remember users who registered a
 moment earlier on a different instance.
 
-## Deploying: Vercel (frontend) + Render/Railway/Fly (API)
+## Deploying: Netlify (frontend) + Render/Railway/Fly (API)
 
 This repo is set up for exactly this split — it's the recommended path since it
 requires zero backend rewrite and keeps the in-memory state model working correctly
 (one persistent process = one shared memory space).
+
+> **Why Netlify and not Vercel:** Vercel projects (especially team-owned ones) often
+> have "Deployment Protection" / Vercel Authentication turned on, which forces every
+> visitor to sign in with a Vercel/GitHub account before they can even view the site —
+> not acceptable for a URL you want to share publicly. Netlify sites are public by
+> default with no such gate. (If you'd rather stay on Vercel, the fix is Project
+> Settings → Deployment Protection → set to "Only Preview Deployments" or "Disabled"
+> for the Production environment — `vercel.json` is still included in this repo in
+> case you want that route instead.)
 
 ### 1. Deploy the API first (Render, Railway, or Fly — any works the same way)
 
@@ -69,7 +78,7 @@ requires zero backend rewrite and keeps the in-memory state model working correc
 - Environment variables (see [`apps/api/.env.example`](./apps/api/.env.example)):
   - `NODE_ENV=production`
   - `JWT_SECRET=<a long random string — the server refuses to start without this in production>`
-  - `WEB_ORIGIN=https://your-app.vercel.app` (set this AFTER step 2, once you know the real Vercel URL)
+  - `WEB_ORIGIN=https://your-app.netlify.app` (set this AFTER step 2, once you know the real Netlify URL)
   - `COOKIE_SAME_SITE=none` — **required** because the frontend and API will be on
     different domains; without this the session cookie won't be sent cross-site at all.
   - `COOKIE_SECURE` doesn't need to be set — it's automatically `true` whenever
@@ -77,20 +86,25 @@ requires zero backend rewrite and keeps the in-memory state model working correc
 - Health check path: `/api/health`
 - Note your API's public URL, e.g. `https://your-api.onrender.com`.
 
-### 2. Deploy the frontend to Vercel
+### 2. Deploy the frontend to Netlify
 
-- Import this repo into Vercel. The included [`vercel.json`](./vercel.json) at the repo
-  root already configures the install/build commands, output directory
-  (`apps/web/dist`), and the SPA rewrite (all routes serve `index.html` so React Router
-  handles client-side routing).
-- Set one environment variable in the Vercel project:
+- Go to [app.netlify.com](https://app.netlify.com) → **Add new site → Import an existing
+  project**, and connect this repo (GitHub/GitLab/Bitbucket).
+- The included [`netlify.toml`](./netlify.toml) at the repo root already configures the
+  build command, publish directory (`apps/web/dist`), Node version, and the SPA redirect
+  (all routes serve `index.html` so React Router handles client-side routing) — Netlify
+  auto-detects it, so the build/publish fields in the UI can be left as-is.
+- Set one environment variable in **Site configuration → Environment variables**:
   - `VITE_API_BASE_URL=https://your-api.onrender.com/api` (the API URL from step 1, with `/api` appended)
-- Deploy. Note the resulting Vercel URL, e.g. `https://your-app.vercel.app`.
+- Deploy. Note the resulting Netlify URL, e.g. `https://your-app.netlify.app` (or set a
+  custom subdomain under **Site configuration → Domain management**).
+- Confirm the site is public: open the Netlify URL in a private/incognito window — it
+  should load directly with no login prompt of any kind.
 
 ### 3. Close the loop
 
-- Go back to the API host and set `WEB_ORIGIN=https://your-app.vercel.app` (the real
-  Vercel URL from step 2), then redeploy the API so CORS allows it.
-- Visit the Vercel URL and confirm: sign up, sign in, and the Automation Access page's
+- Go back to the API host and set `WEB_ORIGIN=https://your-app.netlify.app` (the real
+  Netlify URL from step 2), then redeploy the API so CORS allows it.
+- Visit the Netlify URL and confirm: sign up, sign in, and the Automation Access page's
   session-link flow all work end-to-end.
 
