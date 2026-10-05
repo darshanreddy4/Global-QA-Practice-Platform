@@ -63,7 +63,7 @@ export function GlobalSearch() {
   };
 
   return (
-    <div className="relative w-72">
+    <div className="relative w-full">
       <input
         ref={inputRef}
         data-testid="global-search-input"
@@ -82,7 +82,7 @@ export function GlobalSearch() {
         }}
       />
       {open && query.trim().length >= 2 && (
-        <ul data-testid="global-search-results" className="absolute z-20 mt-1 max-h-80 w-96 overflow-y-auto rounded-md border border-slate-200 bg-white py-1 text-sm shadow-lg">
+        <ul data-testid="global-search-results" className="absolute z-20 mt-1 max-h-80 w-full max-w-[90vw] overflow-y-auto rounded-md border border-slate-200 bg-white py-1 text-sm shadow-lg sm:w-96">
           {hits.length === 0 && <li className="px-3 py-2 text-slate-400">No matches for "{query}"</li>}
           {hits.map((hit) => (
             <li key={`${hit.type}-${hit.id}`}>

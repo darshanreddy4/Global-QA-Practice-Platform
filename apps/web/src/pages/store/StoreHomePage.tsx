@@ -78,10 +78,21 @@ export function StoreHomePage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-6 py-3">
-        <div className="mx-auto flex max-w-5xl items-center gap-4">
-          <span className="text-lg font-bold text-brand-700">AwesomeMart</span>
-          <div className="relative flex-1">
+      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
+        <div className="mx-auto max-w-5xl space-y-2">
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-lg font-bold text-brand-700">AwesomeMart</span>
+            <div className="flex shrink-0 items-center gap-4">
+              <Link to="/store/cart" data-testid="cart-link" className="relative whitespace-nowrap text-sm font-medium text-slate-700 hover:text-brand-600">
+                {"\u{1F6D2}"} Cart
+                {cartUnits > 0 && <Badge tone="info">{cartUnits}</Badge>}
+              </Link>
+              <Link to="/store/wishlist" data-testid="wishlist-link" className="whitespace-nowrap text-sm font-medium text-slate-700 hover:text-brand-600">
+                {"\u2665"} Wishlist ({favorites.size})
+              </Link>
+            </div>
+          </div>
+          <div className="relative">
             <input
               data-testid="store-search-input"
               placeholder="Search products…"
@@ -112,17 +123,10 @@ export function StoreHomePage() {
               </div>
             )}
           </div>
-          <Link to="/store/cart" data-testid="cart-link" className="relative text-sm font-medium text-slate-700 hover:text-brand-600">
-            {"\u{1F6D2}"} Cart
-            {cartUnits > 0 && <Badge tone="info">{cartUnits}</Badge>}
-          </Link>
-          <Link to="/store/wishlist" data-testid="wishlist-link" className="text-sm font-medium text-slate-700 hover:text-brand-600">
-            {"\u2665"} Wishlist ({favorites.size})
-          </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-6">
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
         <div className="mb-4 flex flex-wrap items-center gap-2">
           {CATEGORIES.map((c) => (
             <button
