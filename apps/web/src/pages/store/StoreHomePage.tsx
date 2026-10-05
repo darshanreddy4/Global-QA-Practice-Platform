@@ -24,22 +24,42 @@ export function StoreHomePage() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [compareSelections, setCompareSelections] = useState<Record<string, boolean>>({});
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
   const toggleCompareCell = (productId: string, attr: string) => {
     const key = `${productId}__${attr}`;
     setCompareSelections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  /** Product matches a free-text query by product name (incl. brand, which is embedded
+   * in the name, e.g. "Nike" in "Nike Air Runner") OR by category — all substring/"contains",
+   * case-insensitive, so partial words like "run" or a whole category like "Footwear" both work. */
+  const matchesQuery = (p: (typeof PRODUCTS)[number], query: string) => {
+    const q = query.trim().toLowerCase();
+    if (q === "") return true;
+    return p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
+  };
+
+  const suggestions = useMemo(() => {
+    if (search.trim() === "") return [];
+    return PRODUCTS.filter((p) => matchesQuery(p, search)).slice(0, 6);
+  }, [search]);
+
   const filtered = useMemo(() => {
     const min = minPrice.trim() === "" ? -Infinity : Number(minPrice);
     const max = maxPrice.trim() === "" ? Infinity : Number(maxPrice);
     return PRODUCTS.filter((p) => {
       const matchesCategory = category === "All" || p.category === category;
-      const matchesSearch = p.name.toLowerCase().includes(search.trim().toLowerCase());
       const matchesPrice = p.price >= min && p.price <= max;
-      return matchesCategory && matchesSearch && matchesPrice;
+      return matchesCategory && matchesQuery(p, search) && matchesPrice;
     });
   }, [search, category, minPrice, maxPrice]);
+
+  const selectSuggestion = (p: (typeof PRODUCTS)[number]) => {
+    setSearch(p.name);
+    setCategory("All");
+    setSuggestionsOpen(false);
+  };
 
   const cartUnits = cart.reduce((sum, l) => sum + l.qty, 0);
 
@@ -61,13 +81,37 @@ export function StoreHomePage() {
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-6 py-3">
         <div className="mx-auto flex max-w-5xl items-center gap-4">
           <span className="text-lg font-bold text-brand-700">AwesomeMart</span>
-          <input
-            data-testid="store-search-input"
-            placeholder="Search products…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm"
-          />
+          <div className="relative flex-1">
+            <input
+              data-testid="store-search-input"
+              placeholder="Search products…"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setSuggestionsOpen(true);
+              }}
+              onFocus={() => setSuggestionsOpen(true)}
+              onBlur={() => window.setTimeout(() => setSuggestionsOpen(false), 150)}
+              className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+            />
+            {suggestionsOpen && suggestions.length > 0 && (
+              <div data-testid="search-suggestions" className="absolute left-0 top-full z-20 mt-1 w-full rounded-md border border-slate-200 bg-white py-1 shadow-lg">
+                {suggestions.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    data-testid={`search-suggestion-${p.id}`}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => selectSuggestion(p)}
+                    className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm hover:bg-slate-50"
+                  >
+                    <span className="text-slate-800">{p.name}</span>
+                    <span className="text-xs text-slate-400">{p.category}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <Link to="/store/cart" data-testid="cart-link" className="relative text-sm font-medium text-slate-700 hover:text-brand-600">
             {"\u{1F6D2}"} Cart
             {cartUnits > 0 && <Badge tone="info">{cartUnits}</Badge>}
@@ -142,7 +186,7 @@ export function StoreHomePage() {
             );
           })}
         </div>
-        {filtered.length === 0 && <p className="mt-6 text-center text-sm text-slate-400">No products match your search/filter.</p>}
+        {filtered.length === 0 && <p data-testid="store-no-results" className="mt-6 text-center text-sm text-slate-400">No products match your search/filter.</p>}
 
         {category === "Footwear" && (
           <div className="mt-8" data-testid="compare-shoes-section">
