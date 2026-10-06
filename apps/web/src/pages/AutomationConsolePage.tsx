@@ -130,15 +130,13 @@ export function AutomationConsolePage() {
   }, []);
 
   const closeTab = (id: string) => {
-    setTabs((prev) => {
-      if (prev.length <= 1) return prev; // always keep at least one tab open
-      const idx = prev.findIndex((t) => t.id === id);
-      const next = prev.filter((t) => t.id !== id);
-      if (activeTabId === id) {
-        setActiveTabId((next[idx - 1] ?? next[0]).id);
-      }
-      return next;
-    });
+    if (tabs.length <= 1) return; // always keep at least one tab open
+    const idx = tabs.findIndex((t) => t.id === id);
+    const next = tabs.filter((t) => t.id !== id);
+    if (activeTabId === id) {
+      setActiveTabId((next[idx - 1] ?? next[0]).id);
+    }
+    setTabs(next);
     iframeRefs.current.delete(id);
   };
 
@@ -180,6 +178,30 @@ export function AutomationConsolePage() {
   const goBack = () => iframeRefs.current.get(activeTabId)?.contentWindow?.history.back();
   const goForward = () => iframeRefs.current.get(activeTabId)?.contentWindow?.history.forward();
   const reloadFrame = () => iframeRefs.current.get(activeTabId)?.contentWindow?.location.reload();
+
+  // Draggable splitter between the code editor and the preview, like a real IDE/browser devtools
+  // split — `splitPct` is the code editor's width as a percentage of the row.
+  const [splitPct, setSplitPct] = useState(50);
+  const [isDragging, setIsDragging] = useState(false);
+  const splitRowRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const onMove = (e: MouseEvent) => {
+      const row = splitRowRef.current;
+      if (!row) return;
+      const rect = row.getBoundingClientRect();
+      const pct = ((e.clientX - rect.left) / rect.width) * 100;
+      setSplitPct(Math.min(80, Math.max(20, pct)));
+    };
+    const onUp = () => setIsDragging(false);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [isDragging]);
 
   const switchFramework = (fw: Framework) => {
     setFramework(fw);
@@ -292,8 +314,8 @@ export function AutomationConsolePage() {
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        <div className="flex w-1/2 flex-col border-r border-slate-800">
+      <div ref={splitRowRef} className={`flex flex-1 overflow-hidden ${isDragging ? "select-none" : ""}`}>
+        <div className="flex flex-col border-r border-slate-800" style={{ width: `${splitPct}%` }}>
           <div className="border-b border-slate-800 px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
             {framework === "cypress" ? "spec.cy.js" : "spec.pw.ts"}
           </div>
@@ -305,34 +327,41 @@ export function AutomationConsolePage() {
             className="flex-1 resize-none bg-slate-950 p-4 font-mono text-sm leading-relaxed text-slate-100 outline-none"
           />
         </div>
-        <div className="flex w-1/2 flex-col">
+        <div
+          data-testid="console-split-handle"
+          onMouseDown={() => setIsDragging(true)}
+          title="Drag to resize"
+          className="w-1.5 shrink-0 cursor-col-resize bg-slate-800 hover:bg-brand-600 active:bg-brand-600"
+        />
+        <div className="flex flex-col" style={{ width: `${100 - splitPct}%` }}>
           <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-800 bg-slate-900 px-2 pt-1.5">
             {tabs.map((tab, i) => (
-              <button
+              <div
                 key={tab.id}
-                type="button"
-                data-testid={`console-tab-${i}`}
-                onClick={() => setActiveTabId(tab.id)}
-                title={tab.currentUrl}
-                className={`flex max-w-[180px] items-center gap-1.5 rounded-t-md border border-b-0 px-2.5 py-1.5 text-xs ${
+                className={`flex max-w-[180px] items-center gap-1 rounded-t-md border border-b-0 pl-2.5 pr-1 py-1 text-xs ${
                   tab.id === activeTabId ? "border-slate-700 bg-slate-950 text-white" : "border-transparent bg-slate-800/60 text-slate-400 hover:bg-slate-800"
                 }`}
               >
-                <span className="truncate">{tabLabel(tab.currentUrl)}</span>
+                <button
+                  type="button"
+                  data-testid={`console-tab-${i}`}
+                  onClick={() => setActiveTabId(tab.id)}
+                  title={tab.currentUrl}
+                  className="min-w-0 flex-1 truncate py-0.5 text-left"
+                >
+                  {tabLabel(tab.currentUrl)}
+                </button>
                 {tabs.length > 1 && (
-                  <span
-                    role="button"
+                  <button
+                    type="button"
                     data-testid={`console-tab-close-${i}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      closeTab(tab.id);
-                    }}
-                    className="rounded px-1 leading-none text-slate-500 hover:bg-slate-700 hover:text-white"
+                    onClick={() => closeTab(tab.id)}
+                    className="shrink-0 rounded px-1.5 py-0.5 leading-none text-slate-500 hover:bg-slate-700 hover:text-white"
                   >
                     {"\u00D7"}
-                  </span>
+                  </button>
                 )}
-              </button>
+              </div>
             ))}
             <button
               type="button"
