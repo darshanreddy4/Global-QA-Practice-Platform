@@ -14,11 +14,17 @@ export function LocatorLabEngine({ variant }: LocatorLabEngineProps) {
   }
 }
 
-type LocatorMode = "css" | "xpath";
-type RowResult = { outcome: "idle" | "pass" | "fail"; message: string };
+type LocatorMode = "css" | "xpath" | "code";
+type RowResult = { outcome: "idle" | "pass" | "fail"; message: string; logs?: string[] };
+
+const CODE_STARTER = `it('locates the correct element', () => {
+  const el = $('YOUR_CSS_SELECTOR_HERE');
+  // or: const el = $x('YOUR_XPATH_HERE');
+  expect(el).toBeTheTarget();
+});`;
 
 /** Evaluates a user-typed CSS selector or XPath expression against the live document. */
-function evaluateLocator(mode: LocatorMode, expr: string): { nodes: Element[]; error: string | null } {
+function evaluateLocator(mode: "css" | "xpath", expr: string): { nodes: Element[]; error: string | null } {
   const trimmed = expr.trim();
   if (!trimmed) return { nodes: [], error: null };
   try {
@@ -32,6 +38,78 @@ function evaluateLocator(mode: LocatorMode, expr: string): { nodes: Element[]; e
   } catch {
     return { nodes: [], error: `Invalid ${mode === "css" ? "CSS selector" : "XPath expression"} syntax.` };
   }
+}
+
+/**
+ * Runs a user-written `it('...', () => { ... })` block in a sandboxed function with real,
+ * Playwright-flavored DOM helpers ($ / $x / click / type / getText / expect). This is genuine
+ * JavaScript executing against the live document — real Selenium/Playwright/Cypress code can't
+ * run INSIDE the page itself (those frameworks drive the browser from an external process), so
+ * this is the authentic in-page equivalent: the same DOM APIs those frameworks ultimately call.
+ */
+function runUserCode(code: string, answerNode: Element | null): { pass: boolean; message: string; logs: string[] } {
+  const logs: string[] = [];
+  const log = (...args: unknown[]) => logs.push(args.map((a) => (typeof a === "string" ? a : JSON.stringify(a))).join(" "));
+
+  const $ = (selector: string) => document.querySelector(selector);
+  const $all = (selector: string) => Array.from(document.querySelectorAll(selector));
+  const $x = (xpath: string) => {
+    const result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+    return result.singleNodeValue as Element | null;
+  };
+  const click = (el: Element | null) => {
+    if (el instanceof HTMLElement) el.click();
+  };
+  const type = (el: Element | null, text: string) => {
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+      const proto = el instanceof HTMLTextAreaElement ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+      const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+      setter?.call(el, text);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  };
+  const getText = (el: Element | null) => el?.textContent?.trim() ?? "";
+
+  let itRan = false;
+  let itPassed = false;
+  let itError: string | null = null;
+
+  const it = (_description: string, fn: () => void) => {
+    itRan = true;
+    try {
+      fn();
+      itPassed = true;
+    } catch (e) {
+      itPassed = false;
+      itError = e instanceof Error ? e.message : String(e);
+    }
+  };
+
+  const expect = (actual: unknown) => ({
+    toBeTheTarget: () => {
+      if (actual !== answerNode) throw new Error("Expected the located element to be the correct target, but it wasn't.");
+    },
+    toEqual: (expected: unknown) => {
+      if (actual !== expected) throw new Error(`Expected ${String(actual)} to equal ${String(expected)}`);
+    },
+    toContain: (expected: string) => {
+      if (typeof actual !== "string" || !actual.includes(expected)) {
+        throw new Error(`Expected "${String(actual)}" to contain "${expected}"`);
+      }
+    },
+  });
+
+  try {
+    // eslint-disable-next-line no-new-func
+    const fn = new Function("it", "expect", "$", "$all", "$x", "click", "type", "getText", "log", code);
+    fn(it, expect, $, $all, $x, click, type, getText, log);
+  } catch (e) {
+    return { pass: false, message: `Script error: ${e instanceof Error ? e.message : String(e)}`, logs };
+  }
+
+  if (!itRan) return { pass: false, message: "Your script must call it('description', () => { ... }).", logs };
+  if (!itPassed) return { pass: false, message: itError ?? "Assertion failed.", logs };
+  return { pass: true, message: "Correct \u2014 matched exactly the right element.", logs };
 }
 
 function LocatorGauntlet() {
@@ -57,8 +135,19 @@ function LocatorGauntlet() {
     const mode = modes[rowId] ?? "css";
     const value = values[rowId] ?? "";
     const answerNode = answerRefs.current[rowId];
-    const { nodes, error } = evaluateLocator(mode, value);
 
+    if (mode === "code") {
+      if (!value.trim()) {
+        setResults((prev) => ({ ...prev, [rowId]: { outcome: "fail", message: "Write a script first." } }));
+        return;
+      }
+      const { pass, message, logs } = runUserCode(value, answerNode);
+      if (pass) setField(fieldName, true);
+      setResults((prev) => ({ ...prev, [rowId]: { outcome: pass ? "pass" : "fail", message, logs } }));
+      return;
+    }
+
+    const { nodes, error } = evaluateLocator(mode, value);
     let result: RowResult;
     if (!value.trim()) {
       result = { outcome: "fail", message: "Enter a selector/expression first." };
@@ -513,25 +602,59 @@ function LocatorRow({
             type="button"
             data-testid={`locator-mode-xpath-${rowId}`}
             onClick={() => onModeChange("xpath")}
-            className={`rounded-r-md px-2 py-1 ${mode === "xpath" ? "bg-brand-600 text-white" : "bg-white text-slate-600"}`}
+            className={`px-2 py-1 ${mode === "xpath" ? "bg-brand-600 text-white" : "bg-white text-slate-600"}`}
           >
             XPath
           </button>
+          <button
+            type="button"
+            data-testid={`locator-mode-code-${rowId}`}
+            onClick={() => {
+              onModeChange("code");
+              if (!value.trim()) onValueChange(CODE_STARTER);
+            }}
+            className={`rounded-r-md px-2 py-1 ${mode === "code" ? "bg-brand-600 text-white" : "bg-white text-slate-600"}`}
+          >
+            Code
+          </button>
         </div>
+        {mode === "code" ? (
+          <Button size="sm" data-testid={`locator-validate-${rowId}`} onClick={onValidate}>
+            Run
+          </Button>
+        ) : (
+          <Button size="sm" data-testid={`locator-validate-${rowId}`} onClick={onValidate}>
+            Validate
+          </Button>
+        )}
+        {result && result.outcome !== "idle" && (
+          <Badge tone={result.outcome === "pass" ? "success" : "danger"}>{result.message}</Badge>
+        )}
+      </div>
+
+      {mode === "code" ? (
+        <textarea
+          data-testid={`locator-code-${rowId}`}
+          value={value}
+          onChange={(e) => onValueChange(e.target.value)}
+          spellCheck={false}
+          rows={5}
+          className="mt-2 w-full rounded-md border border-slate-300 bg-slate-900 px-3 py-2 font-mono text-xs text-slate-100"
+        />
+      ) : (
         <input
           data-testid={`locator-input-${rowId}`}
           value={value}
           onChange={(e) => onValueChange(e.target.value)}
           placeholder={mode === "css" ? "e.g. #save-btn" : "e.g. //button[text()='Save']"}
-          className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1 font-mono text-xs"
+          className="mt-2 w-full rounded-md border border-slate-300 px-2 py-1 font-mono text-xs"
         />
-        <Button size="sm" data-testid={`locator-validate-${rowId}`} onClick={onValidate}>
-          Validate
-        </Button>
-        {result && result.outcome !== "idle" && (
-          <Badge tone={result.outcome === "pass" ? "success" : "danger"}>{result.message}</Badge>
-        )}
-      </div>
+      )}
+      {result?.logs && result.logs.length > 0 && (
+        <pre data-testid={`locator-logs-${rowId}`} className="mt-2 rounded-md bg-slate-900 px-3 py-2 text-[11px] text-slate-100">
+          {result.logs.join("\n")}
+        </pre>
+      )}
     </div>
   );
 }
