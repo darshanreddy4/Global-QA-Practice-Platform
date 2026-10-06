@@ -81,6 +81,8 @@ export function AutomationConsolePage() {
   const iframeRefs = useRef(new Map<string, HTMLIFrameElement>());
 
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
+  const activeTabIdRef = useRef(activeTabId);
+  activeTabIdRef.current = activeTabId;
 
   // Real address-bar state: synced from the active tab's `currentUrl` (kept fresh by the polling
   // effect below, since the embedded app is a client-side router — plain `<Link>` clicks inside it
@@ -129,21 +131,28 @@ export function AutomationConsolePage() {
     editingAddressRef.current = false;
   }, []);
 
-  const closeTab = (id: string) => {
-    if (tabs.length <= 1) return; // always keep at least one tab open
-    const idx = tabs.findIndex((t) => t.id === id);
-    const next = tabs.filter((t) => t.id !== id);
-    if (activeTabId === id) {
-      setActiveTabId((next[idx - 1] ?? next[0]).id);
-    }
-    setTabs(next);
+  // Stable (never-stale) close handler — reads `activeTabIdRef` instead of closing over the render's
+  // `activeTabId`, since `window.close()` overrides captured at iframe-load time (see below) can fire
+  // long after other tabs have since been opened/closed.
+  const closeTab = useCallback((id: string) => {
+    setTabs((prev) => {
+      if (prev.length <= 1) return prev; // always keep at least one tab open
+      const idx = prev.findIndex((t) => t.id === id);
+      const next = prev.filter((t) => t.id !== id);
+      if (activeTabIdRef.current === id) {
+        setActiveTabId((next[idx - 1] ?? next[0]).id);
+      }
+      return next;
+    });
     iframeRefs.current.delete(id);
-  };
+  }, []);
 
-  // Catches both real `<a target="_blank">` clicks (native browser behavior that bypasses JS
-  // entirely, so this must be a capturing click listener) and `window.open()` calls made by the
-  // embedded app (e.g. the Window Handling / AwesomeMart mission launchers), redirecting either one
-  // into a new embedded tab instead of a real new OS browser tab.
+  // Catches real `<a target="_blank">` clicks (native browser behavior that bypasses JS entirely, so
+  // this must be a capturing click listener), `window.open()` calls (e.g. the Window Handling /
+  // AwesomeMart mission launchers) — redirecting either into a new embedded tab instead of a real new
+  // OS browser tab — and `window.close()` calls (e.g. the "Close this tab" buttons on those same
+  // child pages), which real browsers only honor for script-opened windows; here every embedded tab
+  // is "script-opened" by definition, so self-close should always work.
   const handleIframeLoad = (tabId: string) => {
     const iframeEl = iframeRefs.current.get(tabId);
     const win = iframeEl?.contentWindow;
@@ -154,6 +163,8 @@ export function AutomationConsolePage() {
       if (url) openNewTab(String(url));
       return null;
     }) as typeof win.open;
+
+    win.close = (() => closeTab(tabId)) as typeof win.close;
 
     doc.addEventListener(
       "click",
