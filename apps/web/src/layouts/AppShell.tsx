@@ -84,6 +84,15 @@ export function AppShell() {
           <div className="min-w-0 flex-1 sm:max-w-xs md:max-w-sm">
             <GlobalSearch />
           </div>
+          <Link
+            to="/automation-console"
+            data-testid="automation-console-link"
+            title="Automation Console — run Cypress/Playwright-style scripts"
+            aria-label="Open Automation Console"
+            className="shrink-0 rounded-md border border-slate-300 px-2 py-1.5 font-mono text-xs font-semibold text-slate-600 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700"
+          >
+            {"</>"}
+          </Link>
           <span className="hidden text-xs text-slate-400 lg:inline">Enterprise QA practice environment &mdash; fictional data only</span>
           <div className="ml-auto flex flex-wrap items-center gap-2 sm:gap-3">
             <ThemeToggle />

@@ -20,6 +20,7 @@ import { StoreWishlistPage } from "../pages/store/StoreWishlistPage";
 import { StoreCheckoutPage } from "../pages/store/StoreCheckoutPage";
 import { StorePaymentWidgetFrame } from "../pages/store/StorePaymentWidgetFrame";
 import { StoreOrderTrackingPage } from "../pages/store/StoreOrderTrackingPage";
+import { AutomationConsolePage } from "../pages/AutomationConsolePage";
 import { useAuthStore } from "../store/authStore";
 import { ErrorBoundary } from "./ErrorBoundary";
 
@@ -52,6 +53,9 @@ export function App() {
           <Route path="/store/checkout" element={<ErrorBoundary><StoreCheckoutPage /></ErrorBoundary>} />
           <Route path="/store/payment-widget" element={<ErrorBoundary><StorePaymentWidgetFrame /></ErrorBoundary>} />
           <Route path="/store/orders/:orderId" element={<ErrorBoundary><StoreOrderTrackingPage /></ErrorBoundary>} />
+          {/* Full-screen Cypress/Playwright-style automation console, standalone like the store
+              so it gets the entire viewport instead of being squeezed into the app shell. */}
+          <Route path="/automation-console" element={<ErrorBoundary><AutomationConsolePage /></ErrorBoundary>} />
           <Route element={<AppShell />}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/practice" element={<PracticeCatalogPage />} />
