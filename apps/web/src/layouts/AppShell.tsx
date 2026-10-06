@@ -3,7 +3,7 @@ import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
 import { categories, getChildren } from "@qaplatform/shared";
 import { Badge } from "../design-system";
 import { useAuthStore } from "../store/authStore";
-import { useThemeStore } from "../store/themeStore";
+import { useThemeStore, type Theme } from "../store/themeStore";
 import { GlobalSearch } from "../features/search/GlobalSearch";
 import { ErrorBoundary } from "../app/ErrorBoundary";
 
@@ -89,26 +89,39 @@ export function AppShell() {
             data-testid="automation-console-link"
             title="Automation Console — run Cypress/Playwright-style scripts"
             aria-label="Open Automation Console"
-            className="shrink-0 rounded-md border border-slate-300 px-2 py-1.5 font-mono text-xs font-semibold text-slate-600 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700"
+            className="flex shrink-0 items-center gap-1.5 rounded-md bg-slate-900 px-2.5 py-1.5 font-mono text-xs font-semibold text-white shadow-sm hover:bg-slate-700"
           >
-            {"</>"}
+            <span aria-hidden="true">{"</>"}</span>
+            <span className="hidden sm:inline">Console</span>
           </Link>
           <span className="hidden text-xs text-slate-400 lg:inline">Enterprise QA practice environment &mdash; fictional data only</span>
           <div className="ml-auto flex flex-wrap items-center gap-2 sm:gap-3">
             <ThemeToggle />
-            <Link to="/automation-access" className="hidden text-sm text-slate-500 hover:text-brand-600 hover:underline sm:inline">
+            <Link
+              to="/automation-access"
+              className="hidden rounded-md border border-slate-300 px-2.5 py-1.5 text-sm font-medium text-slate-700 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 sm:inline"
+            >
               Automation Access
             </Link>
             {user ? (
               <>
-                <span className="hidden text-sm text-slate-700 sm:inline">{user.fullName}</span>
+                <span className="hidden text-sm font-medium text-slate-700 sm:inline">{user.fullName}</span>
                 <Badge tone="neutral">{user.role}</Badge>
-                <button className="text-sm text-brand-600 hover:underline" onClick={() => logout()}>
+                <button
+                  className="rounded-md border border-slate-300 px-2.5 py-1.5 text-sm font-medium text-slate-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600"
+                  onClick={() => logout()}
+                >
                   Sign out
                 </button>
               </>
             ) : (
-              <Link to="/login" className="text-sm text-brand-600 hover:underline">Sign in</Link>
+              <Link
+                to="/login"
+                data-testid="header-sign-in-link"
+                className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
+              >
+                Sign in
+              </Link>
             )}
           </div>
         </header>
@@ -129,20 +142,43 @@ const dedicatedRoutes: Record<string, string> = {
   practice: "/practice",
 };
 
+const THEME_OPTIONS: { value: Theme; label: string; icon: string }[] = [
+  { value: "light", label: "Day", icon: "\u2600\ufe0f" },
+  { value: "gray", label: "Gray", icon: "\u25d1" },
+  { value: "dark", label: "Night", icon: "\ud83c\udf19" },
+];
+
+/** Explicit 3-way segmented control (not a single cycling toggle) so Day/Gray/Night
+ * are all visible and independently selectable at a glance, enterprise-settings style. */
 function ThemeToggle() {
-  const { theme, toggleTheme } = useThemeStore();
-  const isDark = theme === "dark";
+  const { theme, setTheme } = useThemeStore();
   return (
-    <button
-      type="button"
+    <div
       data-testid="theme-toggle"
-      onClick={toggleTheme}
-      aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
-      title={isDark ? "Switch to light theme" : "Switch to dark theme"}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-sm text-slate-600 hover:bg-slate-100"
+      role="group"
+      aria-label="Theme"
+      className="flex items-center gap-0.5 rounded-md border border-slate-300 bg-slate-100 p-0.5"
     >
-      {isDark ? "\u2600\ufe0f" : "\ud83c\udf19"}
-    </button>
+      {THEME_OPTIONS.map((opt) => {
+        const active = theme === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            data-testid={`theme-option-${opt.value}`}
+            onClick={() => setTheme(opt.value)}
+            aria-pressed={active}
+            title={`${opt.label} mode`}
+            className={[
+              "inline-flex h-7 w-7 items-center justify-center rounded text-sm transition-colors",
+              active ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700",
+            ].join(" ")}
+          >
+            {opt.icon}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

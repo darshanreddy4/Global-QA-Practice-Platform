@@ -126,3 +126,101 @@ body {
    they already read as "dark" panels on a light page and still work as-is
    here. */
 
+/*
+ * Gray ("dim") theme — a third option between light and full dark, using a
+ * neutral (non blue-tinted) gray palette so it's visually distinct from
+ * `.dark` above rather than just a lighter version of it. Same selector set
+ * as `.dark` (so every page gets the same coverage for free); pale accent
+ * tints/semantic text colors are reused as-is from the dark theme since they
+ * were already calibrated for a dark-ish background.
+ */
+.gray {
+  color-scheme: dark;
+}
+
+.gray body {
+  background-color: #202124;
+}
+
+/* Neutral surfaces */
+.gray .bg-white { background-color: #2f3136; }
+.gray .bg-slate-50 { background-color: #202124; }
+.gray .bg-slate-100 { background-color: #2b2d31; }
+.gray .bg-slate-200 { background-color: #3f4147; }
+.gray .bg-slate-300 { background-color: #54565c; }
+.gray .hover\:bg-slate-50:hover { background-color: #343639; }
+.gray .hover\:bg-slate-100:hover { background-color: #3a3c41; }
+
+/* Neutral text */
+.gray .text-slate-900 { color: #f2f3f5; }
+.gray .text-slate-800 { color: #e3e5e8; }
+.gray .text-slate-700 { color: #c9cbd1; }
+.gray .text-slate-600 { color: #9a9ca3; }
+.gray .text-slate-500 { color: #9a9ca3; }
+.gray .text-slate-400 { color: #6f7177; }
+.gray .hover\:text-slate-600:hover,
+.gray .hover\:text-brand-600:hover { color: #8aabff; }
+
+/* Neutral borders/dividers */
+.gray .border-slate-100 { border-color: #2b2d31; }
+.gray .border-slate-200 { border-color: #3a3c41; }
+.gray .border-slate-300 { border-color: #45474d; }
+.gray .border-slate-400 { border-color: #54565c; }
+.gray .divide-slate-100 > * + * { border-color: #2b2d31; }
+.gray .divide-slate-200 > * + * { border-color: #3a3c41; }
+
+/* Pale accent tints (badges/alert panels calibrated for a white page) */
+.gray .bg-brand-50 { background-color: rgba(59, 95, 224, 0.16); }
+.gray .bg-brand-50\/30 { background-color: rgba(59, 95, 224, 0.1); }
+.gray .bg-brand-50\/40 { background-color: rgba(59, 95, 224, 0.14); }
+.gray .bg-brand-100 { background-color: rgba(59, 95, 224, 0.24); }
+.gray .bg-brand-200 { background-color: rgba(59, 95, 224, 0.32); }
+.gray .bg-brand-300 { background-color: rgba(59, 95, 224, 0.4); }
+.gray .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.16); }
+.gray .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.26); }
+.gray .bg-red-50 { background-color: rgba(239, 68, 68, 0.16); }
+.gray .bg-red-50\/40 { background-color: rgba(239, 68, 68, 0.12); }
+.gray .bg-red-100 { background-color: rgba(239, 68, 68, 0.26); }
+.gray .bg-red-300 { background-color: rgba(239, 68, 68, 0.4); }
+.gray .bg-amber-50 { background-color: rgba(245, 158, 11, 0.16); }
+.gray .bg-amber-100 { background-color: rgba(245, 158, 11, 0.26); }
+.gray .bg-blue-50 { background-color: rgba(59, 130, 246, 0.16); }
+
+.gray .border-brand-100 { border-color: rgba(59, 95, 224, 0.3); }
+.gray .border-brand-200 { border-color: rgba(59, 95, 224, 0.4); }
+.gray .border-brand-300 { border-color: rgba(59, 95, 224, 0.5); }
+.gray .border-emerald-200 { border-color: rgba(16, 185, 129, 0.4); }
+.gray .border-red-100 { border-color: rgba(239, 68, 68, 0.3); }
+.gray .border-red-200 { border-color: rgba(239, 68, 68, 0.4); }
+.gray .border-red-300 { border-color: rgba(239, 68, 68, 0.5); }
+.gray .border-amber-300 { border-color: rgba(245, 158, 11, 0.5); }
+.gray .border-blue-300 { border-color: rgba(59, 130, 246, 0.5); }
+
+/* Text sitting on those pale tints needs lightening for contrast */
+.gray .text-brand-500 { color: #8aabff; }
+.gray .text-brand-600 { color: #8aabff; }
+.gray .text-brand-700 { color: #b7cdff; }
+.gray .text-brand-800 { color: #d9e6ff; }
+.gray .text-emerald-600 { color: #34d399; }
+.gray .text-emerald-700 { color: #6ee7b7; }
+.gray .text-emerald-800 { color: #a7f3d0; }
+.gray .text-red-500 { color: #f87171; }
+.gray .text-red-600 { color: #f87171; }
+.gray .text-red-700 { color: #fca5a5; }
+.gray .text-red-800 { color: #fecaca; }
+.gray .text-amber-500 { color: #fbbf24; }
+.gray .text-amber-600 { color: #fbbf24; }
+.gray .text-amber-700 { color: #fcd34d; }
+.gray .text-amber-800 { color: #fde68a; }
+
+.gray ::placeholder { color: #6f7177; }
+
+.gray input, .gray select, .gray textarea {
+  background-color: #2f3136;
+  color: #e3e5e8;
+}
+.gray input:disabled, .gray select:disabled, .gray textarea:disabled {
+  background-color: #202124;
+  color: #6f7177;
+}
+
