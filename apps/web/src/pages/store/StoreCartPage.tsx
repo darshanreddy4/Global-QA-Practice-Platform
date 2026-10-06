@@ -71,7 +71,12 @@ export function StoreCartPage() {
               <tbody>
                 {lines.map((l) => (
                   <tr key={l.productId} className="border-b border-slate-100">
-                    <td className="py-1.5">{l.product!.emoji} {l.product!.name}</td>
+                    <td className="py-1.5">
+                      <span className="flex items-center gap-2">
+                        <img src={l.product!.image} alt="" className="h-8 w-8 rounded object-cover" />
+                        {l.product!.name}
+                      </span>
+                    </td>
                     <td className="py-1.5">${l.product!.price.toFixed(2)}</td>
                     <td className="py-1.5">
                       <input

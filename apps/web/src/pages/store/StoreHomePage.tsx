@@ -4,6 +4,9 @@ import { Badge, Button } from "../../design-system";
 import { useStoreCartStore } from "../../store/storeCartStore";
 import { postStoreEvent } from "../../services/storeBroadcast";
 import { PRODUCTS, CATEGORIES } from "./storeData";
+import { HeroCarousel } from "./HeroCarousel";
+import { ProductRail } from "./ProductRail";
+import { CartIcon, HeartIcon, SearchIcon } from "./icons";
 
 const COMPARE_PRODUCT_IDS = ["f1", "f4", "f6"]; // Nike Air Runner, Reebok Classic Move, Bata Everyday Walk
 const COMPARE_ATTRIBUTES = ["Best Price", "Top Rated", "Fast Delivery"];
@@ -83,16 +86,17 @@ export function StoreHomePage() {
           <div className="flex items-center justify-between gap-4">
             <span className="text-lg font-bold text-brand-700">AwesomeMart</span>
             <div className="flex shrink-0 items-center gap-4">
-              <Link to="/store/cart" data-testid="cart-link" className="relative whitespace-nowrap text-sm font-medium text-slate-700 hover:text-brand-600">
-                {"\u{1F6D2}"} Cart
+              <Link to="/store/cart" data-testid="cart-link" className="relative flex items-center gap-1 whitespace-nowrap text-sm font-medium text-slate-700 hover:text-brand-600">
+                <CartIcon className="h-5 w-5" /> Cart
                 {cartUnits > 0 && <Badge tone="info">{cartUnits}</Badge>}
               </Link>
-              <Link to="/store/wishlist" data-testid="wishlist-link" className="whitespace-nowrap text-sm font-medium text-slate-700 hover:text-brand-600">
-                {"\u2665"} Wishlist ({favorites.size})
+              <Link to="/store/wishlist" data-testid="wishlist-link" className="flex items-center gap-1 whitespace-nowrap text-sm font-medium text-slate-700 hover:text-brand-600">
+                <HeartIcon className="h-5 w-5" filled={favorites.size > 0} /> Wishlist ({favorites.size})
               </Link>
             </div>
           </div>
           <div className="relative">
+            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               data-testid="store-search-input"
               placeholder="Search products…"
@@ -103,7 +107,7 @@ export function StoreHomePage() {
               }}
               onFocus={() => setSuggestionsOpen(true)}
               onBlur={() => window.setTimeout(() => setSuggestionsOpen(false), 150)}
-              className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+              className="w-full rounded-md border border-slate-300 py-1.5 pl-9 pr-3 text-sm"
             />
             {suggestionsOpen && suggestions.length > 0 && (
               <div data-testid="search-suggestions" className="absolute left-0 top-full z-20 mt-1 w-full rounded-md border border-slate-200 bg-white py-1 shadow-lg">
@@ -127,6 +131,20 @@ export function StoreHomePage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+        <HeroCarousel
+          onShopCategory={(c) => {
+            setCategory(c);
+            setSearch("");
+          }}
+        />
+        <ProductRail
+          title="Trending Products"
+          products={PRODUCTS.slice(0, 10)}
+          favorites={favorites}
+          cartQtyById={new Map(cart.map((l) => [l.productId, l.qty]))}
+          onToggleFavorite={onToggleFavorite}
+          onAddToCart={onAddToCart}
+        />
         <div className="mb-4 flex flex-wrap items-center gap-2">
           {CATEGORIES.map((c) => (
             <button
@@ -168,7 +186,7 @@ export function StoreHomePage() {
             const cartLine = cart.find((l) => l.productId === p.id);
             return (
               <div key={p.id} className="rounded-lg border border-slate-200 bg-white p-3" data-testid={`product-card-${p.id}`}>
-                <div className="mb-2 flex h-24 items-center justify-center rounded-md bg-slate-100 text-4xl">{p.emoji}</div>
+                <img src={p.image} alt={p.name} className="mb-2 h-24 w-full rounded-md object-cover" />
                 <p className="text-sm font-medium text-slate-800">{p.name}</p>
                 <p className="text-xs text-slate-400">{p.category}</p>
                 <p className="mt-1 text-sm font-semibold text-slate-900">${p.price.toFixed(2)}</p>
@@ -178,9 +196,9 @@ export function StoreHomePage() {
                     data-testid={`favorite-btn-${p.id}`}
                     aria-pressed={isFavorited}
                     onClick={() => onToggleFavorite(p.id, p.name)}
-                    className={`rounded-md border px-2 py-1 text-sm ${isFavorited ? "border-red-300 bg-red-50 text-red-600" : "border-slate-300 text-slate-400 hover:border-red-300"}`}
+                    className={`rounded-md border p-1.5 ${isFavorited ? "border-red-300 bg-red-50 text-red-500" : "border-slate-300 text-slate-400 hover:border-red-300"}`}
                   >
-                    {isFavorited ? "\u2665" : "\u2661"}
+                    <HeartIcon className="h-4 w-4" filled={isFavorited} />
                   </button>
                   <Button size="sm" data-testid={`add-to-cart-${p.id}`} onClick={() => onAddToCart(p.id)}>
                     {cartLine ? `In cart (${cartLine.qty})` : "Add to Cart"}

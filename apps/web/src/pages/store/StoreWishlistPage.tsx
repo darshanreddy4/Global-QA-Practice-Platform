@@ -50,7 +50,7 @@ export function StoreWishlistPage() {
               const cartLine = cart.find((l) => l.productId === p.id);
               return (
                 <div key={p.id} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3" data-testid={`wishlist-item-${p.id}`}>
-                  <span className="flex h-12 w-12 items-center justify-center rounded-md bg-slate-100 text-2xl">{p.emoji}</span>
+                  <img src={p.image} alt={p.name} className="h-12 w-12 rounded-md object-cover" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-slate-800">{p.name}</p>
                     <p className="text-xs text-slate-400">{p.category} {"\u00b7"} ${p.price.toFixed(2)}</p>
