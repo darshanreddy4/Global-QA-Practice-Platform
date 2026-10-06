@@ -66,8 +66,11 @@ export function StoreHomePage() {
     return sorted;
   }, [search, category, brand, minPrice, maxPrice, sortBy]);
 
-  const selectSuggestion = (p: (typeof PRODUCTS)[number]) => {
-    setSearch(p.name);
+  /** Clicking a suggestion (or pressing Enter) just CONFIRMS the already-typed
+   * contains-search and closes the dropdown — it does NOT narrow the search down
+   * to that one product's exact name, so the grid keeps showing every product
+   * whose name/category contains the typed text, not just the clicked item. */
+  const confirmSearch = () => {
     setCategory("All");
     setSuggestionsOpen(false);
   };
@@ -115,6 +118,13 @@ export function StoreHomePage() {
               }}
               onFocus={() => setSuggestionsOpen(true)}
               onBlur={() => window.setTimeout(() => setSuggestionsOpen(false), 150)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  confirmSearch();
+                  e.currentTarget.blur();
+                }
+              }}
               className="w-full rounded-md border border-slate-300 py-1.5 pl-9 pr-3 text-sm"
             />
             {suggestionsOpen && suggestions.length > 0 && (
@@ -125,7 +135,7 @@ export function StoreHomePage() {
                     type="button"
                     data-testid={`search-suggestion-${p.id}`}
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => selectSuggestion(p)}
+                    onClick={() => confirmSearch()}
                     className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm hover:bg-slate-50"
                   >
                     <span className="text-slate-800">{p.name}</span>
