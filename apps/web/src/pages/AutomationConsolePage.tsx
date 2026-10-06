@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { CyContext, type LogEntry } from "../features/automation-console/cypressFacade";
 import { PwPage, createExpect } from "../features/automation-console/playwrightFacade";
@@ -48,6 +48,52 @@ export function AutomationConsolePage() {
   const [running, setRunning] = useState(false);
   const [summary, setSummary] = useState<"idle" | "pass" | "fail">("idle");
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Real address-bar state: `liveUrl` always mirrors the iframe's actual current location (updated
+  // by polling below, since the embedded app is a client-side router — plain `<Link>` clicks inside
+  // it change the URL via pushState with no "load" event we could otherwise hook into). `addressDraft`
+  // is the editable text shown in the input; it only diverges from `liveUrl` while the tester is
+  // actively typing a URL to navigate to.
+  const [liveUrl, setLiveUrl] = useState(() => new URL(target, window.location.origin).href);
+  const [addressDraft, setAddressDraft] = useState(liveUrl);
+  const editingAddressRef = useRef(false);
+  const lastSeenUrlRef = useRef(liveUrl);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const iframeEl = iframeRef.current;
+      if (!iframeEl) return;
+      let href: string | undefined;
+      try {
+        href = iframeEl.contentWindow?.location.href;
+      } catch {
+        return; // cross-origin frame — can't read its location, leave the bar as-is
+      }
+      if (href && href !== lastSeenUrlRef.current) {
+        lastSeenUrlRef.current = href;
+        setLiveUrl(href);
+        if (!editingAddressRef.current) setAddressDraft(href);
+      }
+    }, 300);
+    return () => clearInterval(interval);
+  }, []);
+
+  const navigateTo = (rawValue: string) => {
+    const iframeEl = iframeRef.current;
+    if (!iframeEl) return;
+    let resolved: string;
+    try {
+      resolved = new URL(rawValue, window.location.origin).href;
+    } catch {
+      return;
+    }
+    editingAddressRef.current = false;
+    iframeEl.src = resolved;
+  };
+
+  const goBack = () => iframeRef.current?.contentWindow?.history.back();
+  const goForward = () => iframeRef.current?.contentWindow?.history.forward();
+  const reloadFrame = () => iframeRef.current?.contentWindow?.location.reload();
 
   const switchFramework = (fw: Framework) => {
     setFramework(fw);
@@ -126,7 +172,10 @@ export function AutomationConsolePage() {
         <select
           data-testid="console-target-select"
           value={target}
-          onChange={(e) => setTarget(e.target.value)}
+          onChange={(e) => {
+            setTarget(e.target.value);
+            navigateTo(e.target.value);
+          }}
           className="rounded-md border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200"
         >
           {TARGET_OPTIONS.map((opt) => (
@@ -171,7 +220,65 @@ export function AutomationConsolePage() {
           />
         </div>
         <div className="flex w-1/2 flex-col">
-          <div className="border-b border-slate-800 px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">Live preview \u2014 {target}</div>
+          <div className="flex items-center gap-1.5 border-b border-slate-800 bg-slate-900 px-2 py-1.5">
+            <button
+              type="button"
+              data-testid="console-nav-back"
+              title="Back"
+              onClick={goBack}
+              className="rounded px-1.5 py-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+            >
+              {"\u2190"}
+            </button>
+            <button
+              type="button"
+              data-testid="console-nav-forward"
+              title="Forward"
+              onClick={goForward}
+              className="rounded px-1.5 py-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+            >
+              {"\u2192"}
+            </button>
+            <button
+              type="button"
+              data-testid="console-nav-reload"
+              title="Reload"
+              onClick={reloadFrame}
+              className="rounded px-1.5 py-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+            >
+              {"\u21BB"}
+            </button>
+            <input
+              data-testid="console-address-bar"
+              value={addressDraft}
+              onFocus={() => {
+                editingAddressRef.current = true;
+              }}
+              onChange={(e) => setAddressDraft(e.target.value)}
+              onBlur={() => {
+                editingAddressRef.current = false;
+                setAddressDraft(liveUrl);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") navigateTo(addressDraft);
+                if (e.key === "Escape") {
+                  editingAddressRef.current = false;
+                  setAddressDraft(liveUrl);
+                  e.currentTarget.blur();
+                }
+              }}
+              spellCheck={false}
+              className="min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-950 px-2 py-1 font-mono text-xs text-slate-200 outline-none focus:border-brand-500"
+            />
+            <button
+              type="button"
+              data-testid="console-nav-go"
+              onClick={() => navigateTo(addressDraft)}
+              className="rounded-md bg-slate-800 px-2 py-1 text-xs font-medium text-slate-200 hover:bg-slate-700"
+            >
+              Go
+            </button>
+          </div>
           <iframe ref={iframeRef} data-testid="console-preview-frame" src={target} title="Automation console preview" className="flex-1 border-0 bg-white" />
         </div>
       </div>
@@ -185,7 +292,7 @@ export function AutomationConsolePage() {
       </div>
 
       <p className="border-t border-slate-800 bg-slate-900 px-4 py-1.5 text-center text-[11px] text-slate-500">
-        Practice shim \u2014 mimics real Cypress/Playwright syntax against the embedded preview. Not the actual npm packages.
+        {"Practice shim \u2014 mimics real Cypress/Playwright syntax against the embedded preview. Not the actual npm packages."}
       </p>
     </div>
   );
