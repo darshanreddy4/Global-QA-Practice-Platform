@@ -224,19 +224,24 @@ export function AutomationConsolePage() {
   }, []);
 
   const run = async () => {
-    const iframeEl = iframeRefs.current.get(activeTabId);
-    if (!iframeEl) return;
+    if (!iframeRefs.current.get(activeTabId)) return;
     setRunning(true);
     setSummary("idle");
     setLogs([{ type: "info", message: `Running as ${framework === "cypress" ? "Cypress" : "Playwright"} practice script\u2026` }]);
+    // Resolved fresh on every command rather than captured once \u2014 so if the script itself opens a
+    // new embedded tab (clicking a target="_blank" link / window.open) or closes one, subsequent
+    // commands automatically keep following whichever tab is currently active, exactly like a real
+    // browser session (real Cypress/Playwright can't do this across tabs at all; our shim can since
+    // every tab is just an iframe we already control).
+    const getActiveIframe = () => iframeRefs.current.get(activeTabIdRef.current);
     try {
       if (framework === "cypress") {
-        const ctx = new CyContext(iframeEl);
+        const ctx = new CyContext(getActiveIframe);
         const fn = new Function("cy", `"use strict";\n${code}`);
         fn(ctx);
         await ctx.runAll(appendLog);
       } else {
-        const pageObj = new PwPage(iframeEl, appendLog);
+        const pageObj = new PwPage(getActiveIframe, appendLog);
         const expectFn = createExpect(appendLog);
         const fn = new Function("page", "expect", `"use strict";\nreturn (async () => {\n${code}\n})();`);
         await fn(pageObj, expectFn);

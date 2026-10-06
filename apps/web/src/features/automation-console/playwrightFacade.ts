@@ -97,9 +97,15 @@ export class PwLocator {
 
 export class PwPage {
   constructor(
-    private iframeEl: HTMLIFrameElement,
+    private getIframe: () => HTMLIFrameElement | undefined,
     private log: Logger,
   ) {}
+
+  private get iframeEl(): HTMLIFrameElement {
+    const el = this.getIframe();
+    if (!el) throw new Error("No active preview tab to run against.");
+    return el;
+  }
 
   private getDoc = (): Document => {
     const d = this.iframeEl.contentDocument;

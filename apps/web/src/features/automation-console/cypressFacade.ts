@@ -164,9 +164,14 @@ export class CyChain {
 
 export class CyContext {
   private chains: CyChain[] = [];
-  constructor(private iframeEl: HTMLIFrameElement) {}
+  constructor(private getIframe: () => HTMLIFrameElement | undefined) {}
   register(chain: CyChain) {
     this.chains.push(chain);
+  }
+  private get iframeEl(): HTMLIFrameElement {
+    const el = this.getIframe();
+    if (!el) throw new Error("No active preview tab to run against.");
+    return el;
   }
   private get doc(): Document {
     const d = this.iframeEl.contentDocument;
