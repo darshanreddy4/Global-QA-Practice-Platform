@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Badge, Button } from "../../design-system";
 import { useStoreCartStore } from "../../store/storeCartStore";
 import { postStoreEvent } from "../../services/storeBroadcast";
-import { PRODUCTS, CATEGORIES } from "./storeData";
+import { PRODUCTS, CATEGORIES, BRANDS } from "./storeData";
 import { HeroCarousel } from "./HeroCarousel";
 import { ProductRail } from "./ProductRail";
 import { CartIcon, HeartIcon, SearchIcon } from "./icons";
@@ -26,6 +26,8 @@ export function StoreHomePage() {
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("All");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [brand, setBrand] = useState<(typeof BRANDS)[number]>("All");
+  const [sortBy, setSortBy] = useState<"relevance" | "newest" | "price-asc" | "price-desc">("relevance");
   const [compareSelections, setCompareSelections] = useState<Record<string, boolean>>({});
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
@@ -51,12 +53,18 @@ export function StoreHomePage() {
   const filtered = useMemo(() => {
     const min = minPrice.trim() === "" ? -Infinity : Number(minPrice);
     const max = maxPrice.trim() === "" ? Infinity : Number(maxPrice);
-    return PRODUCTS.filter((p) => {
+    const matches = PRODUCTS.filter((p) => {
       const matchesCategory = category === "All" || p.category === category;
+      const matchesBrand = brand === "All" || p.brand === brand;
       const matchesPrice = p.price >= min && p.price <= max;
-      return matchesCategory && matchesQuery(p, search) && matchesPrice;
+      return matchesCategory && matchesBrand && matchesQuery(p, search) && matchesPrice;
     });
-  }, [search, category, minPrice, maxPrice]);
+    const sorted = [...matches];
+    if (sortBy === "newest") sorted.sort((a, b) => (b.releaseYear ?? -Infinity) - (a.releaseYear ?? -Infinity));
+    else if (sortBy === "price-asc") sorted.sort((a, b) => a.price - b.price);
+    else if (sortBy === "price-desc") sorted.sort((a, b) => b.price - a.price);
+    return sorted;
+  }, [search, category, brand, minPrice, maxPrice, sortBy]);
 
   const selectSuggestion = (p: (typeof PRODUCTS)[number]) => {
     setSearch(p.name);
@@ -160,6 +168,17 @@ export function StoreHomePage() {
               {c}
             </button>
           ))}
+          <span className="ml-2 text-xs text-slate-400">Brand:</span>
+          <select
+            data-testid="brand-filter-select"
+            value={brand}
+            onChange={(e) => setBrand(e.target.value as (typeof BRANDS)[number])}
+            className="rounded-md border border-slate-300 px-2 py-1 text-sm"
+          >
+            {BRANDS.map((b) => (
+              <option key={b} value={b}>{b}</option>
+            ))}
+          </select>
           <span className="ml-2 text-xs text-slate-400">Price range:</span>
           <input
             type="number"
@@ -178,6 +197,18 @@ export function StoreHomePage() {
             onChange={(e) => setMaxPrice(e.target.value)}
             className="w-20 rounded-md border border-slate-300 px-2 py-1 text-sm"
           />
+          <span className="ml-2 text-xs text-slate-400">Sort:</span>
+          <select
+            data-testid="sort-select"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            className="rounded-md border border-slate-300 px-2 py-1 text-sm"
+          >
+            <option value="relevance">Relevance</option>
+            <option value="newest">Newest model first</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+          </select>
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
@@ -188,7 +219,9 @@ export function StoreHomePage() {
               <div key={p.id} className="rounded-lg border border-slate-200 bg-white p-3" data-testid={`product-card-${p.id}`}>
                 <img src={p.image} alt={p.name} className="mb-2 h-24 w-full rounded-md object-cover" />
                 <p className="text-sm font-medium text-slate-800">{p.name}</p>
-                <p className="text-xs text-slate-400">{p.category}</p>
+                <p className="text-xs text-slate-400">
+                  {p.brand ? `${p.brand} \u00b7 ${p.releaseYear}` : p.category}
+                </p>
                 <p className="mt-1 text-sm font-semibold text-slate-900">${p.price.toFixed(2)}</p>
                 <div className="mt-2 flex items-center gap-2">
                   <button
