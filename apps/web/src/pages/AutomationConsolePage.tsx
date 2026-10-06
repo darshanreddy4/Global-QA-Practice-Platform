@@ -40,6 +40,28 @@ function LogLine({ entry }: { entry: LogEntry }) {
   );
 }
 
+type Tab = { id: string; initialUrl: string; currentUrl: string };
+
+let tabCounter = 0;
+const makeTabId = () => `tab-${++tabCounter}`;
+
+function resolveUrl(raw: string, fallback: string): string {
+  try {
+    return new URL(raw, window.location.origin).href;
+  } catch {
+    return fallback;
+  }
+}
+
+function tabLabel(url: string): string {
+  try {
+    const path = new URL(url).pathname;
+    return path === "/" ? "Dashboard" : path;
+  } catch {
+    return url;
+  }
+}
+
 export function AutomationConsolePage() {
   const [framework, setFramework] = useState<Framework>("cypress");
   const [target, setTarget] = useState(TARGET_OPTIONS[0].path);
@@ -47,53 +69,117 @@ export function AutomationConsolePage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [running, setRunning] = useState(false);
   const [summary, setSummary] = useState<"idle" | "pass" | "fail">("idle");
-  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Real address-bar state: `liveUrl` always mirrors the iframe's actual current location (updated
-  // by polling below, since the embedded app is a client-side router — plain `<Link>` clicks inside
-  // it change the URL via pushState with no "load" event we could otherwise hook into). `addressDraft`
-  // is the editable text shown in the input; it only diverges from `liveUrl` while the tester is
+  // Multiple embedded "tabs", exactly like a real multi-tab browser window. This matters because the
+  // platform has genuine `target="_blank"` links and `window.open()` calls (by design, to teach real
+  // new-tab behavior) — without interception those would escape the console and open a real OS browser
+  // tab outside it. Each tab gets its own iframe (own document/JS realm), kept mounted so switching back
+  // to a tab doesn't lose its state; only the active one is visible.
+  const firstUrl = useMemo(() => resolveUrl(target, window.location.origin), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [tabs, setTabs] = useState<Tab[]>(() => [{ id: makeTabId(), initialUrl: firstUrl, currentUrl: firstUrl }]);
+  const [activeTabId, setActiveTabId] = useState(() => tabs[0].id);
+  const iframeRefs = useRef(new Map<string, HTMLIFrameElement>());
+
+  const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
+
+  // Real address-bar state: synced from the active tab's `currentUrl` (kept fresh by the polling
+  // effect below, since the embedded app is a client-side router — plain `<Link>` clicks inside it
+  // change the URL via pushState with no "load" event we could otherwise hook into). `addressDraft`
+  // is the editable text shown in the input; it only diverges from the live value while the tester is
   // actively typing a URL to navigate to.
-  const [liveUrl, setLiveUrl] = useState(() => new URL(target, window.location.origin).href);
-  const [addressDraft, setAddressDraft] = useState(liveUrl);
+  const [addressDraft, setAddressDraft] = useState(activeTab.currentUrl);
   const editingAddressRef = useRef(false);
-  const lastSeenUrlRef = useRef(liveUrl);
+
+  useEffect(() => {
+    if (!editingAddressRef.current) setAddressDraft(activeTab.currentUrl);
+  }, [activeTab.currentUrl, activeTabId]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const iframeEl = iframeRef.current;
-      if (!iframeEl) return;
-      let href: string | undefined;
-      try {
-        href = iframeEl.contentWindow?.location.href;
-      } catch {
-        return; // cross-origin frame — can't read its location, leave the bar as-is
-      }
-      if (href && href !== lastSeenUrlRef.current) {
-        lastSeenUrlRef.current = href;
-        setLiveUrl(href);
-        if (!editingAddressRef.current) setAddressDraft(href);
-      }
+      setTabs((prev) => {
+        let changed = false;
+        const next = prev.map((tab) => {
+          const iframeEl = iframeRefs.current.get(tab.id);
+          if (!iframeEl) return tab;
+          let href: string | undefined;
+          try {
+            href = iframeEl.contentWindow?.location.href;
+          } catch {
+            return tab; // cross-origin frame — can't read its location, leave it as-is
+          }
+          if (href && href !== tab.currentUrl) {
+            changed = true;
+            return { ...tab, currentUrl: href };
+          }
+          return tab;
+        });
+        return changed ? next : prev;
+      });
     }, 300);
     return () => clearInterval(interval);
   }, []);
 
-  const navigateTo = (rawValue: string) => {
-    const iframeEl = iframeRef.current;
-    if (!iframeEl) return;
-    let resolved: string;
-    try {
-      resolved = new URL(rawValue, window.location.origin).href;
-    } catch {
-      return;
-    }
+  const openNewTab = useCallback((rawUrl: string) => {
+    setTabs((prev) => {
+      const resolved = resolveUrl(rawUrl, prev[0]?.currentUrl ?? window.location.origin);
+      const id = makeTabId();
+      setActiveTabId(id);
+      return [...prev, { id, initialUrl: resolved, currentUrl: resolved }];
+    });
     editingAddressRef.current = false;
-    iframeEl.src = resolved;
+  }, []);
+
+  const closeTab = (id: string) => {
+    setTabs((prev) => {
+      if (prev.length <= 1) return prev; // always keep at least one tab open
+      const idx = prev.findIndex((t) => t.id === id);
+      const next = prev.filter((t) => t.id !== id);
+      if (activeTabId === id) {
+        setActiveTabId((next[idx - 1] ?? next[0]).id);
+      }
+      return next;
+    });
+    iframeRefs.current.delete(id);
   };
 
-  const goBack = () => iframeRef.current?.contentWindow?.history.back();
-  const goForward = () => iframeRef.current?.contentWindow?.history.forward();
-  const reloadFrame = () => iframeRef.current?.contentWindow?.location.reload();
+  // Catches both real `<a target="_blank">` clicks (native browser behavior that bypasses JS
+  // entirely, so this must be a capturing click listener) and `window.open()` calls made by the
+  // embedded app (e.g. the Window Handling / AwesomeMart mission launchers), redirecting either one
+  // into a new embedded tab instead of a real new OS browser tab.
+  const handleIframeLoad = (tabId: string) => {
+    const iframeEl = iframeRefs.current.get(tabId);
+    const win = iframeEl?.contentWindow;
+    const doc = iframeEl?.contentDocument;
+    if (!iframeEl || !win || !doc) return;
+
+    win.open = ((url?: string | URL) => {
+      if (url) openNewTab(String(url));
+      return null;
+    }) as typeof win.open;
+
+    doc.addEventListener(
+      "click",
+      (e) => {
+        const anchor = (e.target as Element | null)?.closest?.("a[target='_blank']");
+        if (anchor) {
+          e.preventDefault();
+          openNewTab((anchor as HTMLAnchorElement).href);
+        }
+      },
+      true,
+    );
+  };
+
+  const navigateTo = (rawValue: string) => {
+    const iframeEl = iframeRefs.current.get(activeTabId);
+    if (!iframeEl) return;
+    editingAddressRef.current = false;
+    iframeEl.src = resolveUrl(rawValue, activeTab.currentUrl);
+  };
+
+  const goBack = () => iframeRefs.current.get(activeTabId)?.contentWindow?.history.back();
+  const goForward = () => iframeRefs.current.get(activeTabId)?.contentWindow?.history.forward();
+  const reloadFrame = () => iframeRefs.current.get(activeTabId)?.contentWindow?.location.reload();
 
   const switchFramework = (fw: Framework) => {
     setFramework(fw);
@@ -105,7 +191,7 @@ export function AutomationConsolePage() {
   }, []);
 
   const run = async () => {
-    const iframeEl = iframeRef.current;
+    const iframeEl = iframeRefs.current.get(activeTabId);
     if (!iframeEl) return;
     setRunning(true);
     setSummary("idle");
@@ -220,6 +306,44 @@ export function AutomationConsolePage() {
           />
         </div>
         <div className="flex w-1/2 flex-col">
+          <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-800 bg-slate-900 px-2 pt-1.5">
+            {tabs.map((tab, i) => (
+              <button
+                key={tab.id}
+                type="button"
+                data-testid={`console-tab-${i}`}
+                onClick={() => setActiveTabId(tab.id)}
+                title={tab.currentUrl}
+                className={`flex max-w-[180px] items-center gap-1.5 rounded-t-md border border-b-0 px-2.5 py-1.5 text-xs ${
+                  tab.id === activeTabId ? "border-slate-700 bg-slate-950 text-white" : "border-transparent bg-slate-800/60 text-slate-400 hover:bg-slate-800"
+                }`}
+              >
+                <span className="truncate">{tabLabel(tab.currentUrl)}</span>
+                {tabs.length > 1 && (
+                  <span
+                    role="button"
+                    data-testid={`console-tab-close-${i}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeTab(tab.id);
+                    }}
+                    className="rounded px-1 leading-none text-slate-500 hover:bg-slate-700 hover:text-white"
+                  >
+                    {"\u00D7"}
+                  </span>
+                )}
+              </button>
+            ))}
+            <button
+              type="button"
+              data-testid="console-tab-new"
+              title="Open new tab"
+              onClick={() => openNewTab(target)}
+              className="rounded px-2 py-1 text-sm text-slate-400 hover:bg-slate-800 hover:text-white"
+            >
+              +
+            </button>
+          </div>
           <div className="flex items-center gap-1.5 border-b border-slate-800 bg-slate-900 px-2 py-1.5">
             <button
               type="button"
@@ -257,13 +381,13 @@ export function AutomationConsolePage() {
               onChange={(e) => setAddressDraft(e.target.value)}
               onBlur={() => {
                 editingAddressRef.current = false;
-                setAddressDraft(liveUrl);
+                setAddressDraft(activeTab.currentUrl);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") navigateTo(addressDraft);
                 if (e.key === "Escape") {
                   editingAddressRef.current = false;
-                  setAddressDraft(liveUrl);
+                  setAddressDraft(activeTab.currentUrl);
                   e.currentTarget.blur();
                 }
               }}
@@ -279,9 +403,25 @@ export function AutomationConsolePage() {
               Go
             </button>
           </div>
-          <iframe ref={iframeRef} data-testid="console-preview-frame" src={target} title="Automation console preview" className="flex-1 border-0 bg-white" />
+          <div className="relative flex-1">
+            {tabs.map((tab) => (
+              <iframe
+                key={tab.id}
+                ref={(el) => {
+                  if (el) iframeRefs.current.set(tab.id, el);
+                  else iframeRefs.current.delete(tab.id);
+                }}
+                data-testid={tab.id === activeTabId ? "console-preview-frame" : `console-preview-frame-inactive-${tab.id}`}
+                src={tab.initialUrl}
+                title="Automation console preview"
+                onLoad={() => handleIframeLoad(tab.id)}
+                className={`absolute inset-0 h-full w-full border-0 bg-white ${tab.id === activeTabId ? "block" : "hidden"}`}
+              />
+            ))}
+          </div>
         </div>
       </div>
+
 
       <div className="h-48 overflow-y-auto border-t border-slate-800 bg-slate-900 px-4 py-2 font-mono text-xs" data-testid="console-log-panel">
         {logs.length === 0 ? (
