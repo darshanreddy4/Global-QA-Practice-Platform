@@ -524,6 +524,7 @@ or renamed. "Sim" = safe simulated version documented with its technical limitat
 | 53 | Challenge Metadata | Phase 1 | part of core schema |
 | 54 | Everything-in-One-Page Challenge | Phase 11 | after enough components exist |
 | 55 | Nightmare DOM | Phase 11 ✅ | delivered — single combined benchmark page, `nightmare-dom` component, NIGHTMARE-001 (8 stages) |
+| — | XPath & CSS Locator Practice (new) | Phase 11 ✅ | delivered — `locator-lab` component, LOCATOR-001: 10 write-your-own-locator scenarios (basic→advanced), validated live by exact-node reference comparison against the real DOM, not a hidden answer attribute |
 | 56 | QA Mission System | Phase 11 | Missions |
 | 57 | Ultimate E-Commerce Mission | Phase 11 | |
 | 58 | Component Guidance System | Phase 1 | core, built first |

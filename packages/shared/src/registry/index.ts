@@ -40,6 +40,7 @@ import { apiDrivenUiChallenges } from "./challenges/api-driven-ui";
 import { realApplicationsChallenges } from "./challenges/real-applications";
 import { nightmareDomChallenges } from "./challenges/nightmare-dom";
 import { internationalizationChallenges } from "./challenges/internationalization";
+import { locatorPracticeChallenges } from "./challenges/locator-practice";
 
 export const challengeRegistry: ChallengeDefinition[] = [
   ...basicUiActionsChallenges,
@@ -83,6 +84,7 @@ export const challengeRegistry: ChallengeDefinition[] = [
   ...realApplicationsChallenges,
   ...nightmareDomChallenges,
   ...internationalizationChallenges,
+  ...locatorPracticeChallenges,
 ];
 
 /** Fails loudly if any hardcoded challenge drifts from the shared schema (spec §9). */

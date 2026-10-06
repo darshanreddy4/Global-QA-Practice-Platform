@@ -120,10 +120,11 @@ export const categories: CategoryNode[] = [
   c({ id: "missions", slug: "missions", title: "Missions", parentId: null, order: 11, status: "planned", phase: 11, description: "End-to-end business-requirement workflows." }),
   c({ id: "ultimate-challenge", slug: "ultimate-challenge", title: "Ultimate Challenge", parentId: null, order: 12, status: "planned", phase: 11, description: "Every component category on one page." }),
   c({ id: "nightmare-dom", slug: "nightmare-dom", title: "Nightmare DOM", parentId: null, order: 13, status: "available", phase: 11, description: "Advanced combined locator/sync practice." }),
+  c({ id: "locator-practice", slug: "locator-practice", title: "XPath & CSS Locator Practice", parentId: null, order: 14, status: "available", phase: 11, description: "Write your own CSS selectors and XPath expressions, validated live against the real DOM." }),
 
   // Platform
-  c({ id: "analytics", slug: "analytics", title: "Analytics", parentId: null, order: 14, status: "planned", phase: 12, description: "Personal and platform-wide analytics." }),
-  c({ id: "admin", slug: "admin", title: "Admin", parentId: null, order: 15, status: "planned", phase: 12, description: "Challenge/category/user administration." }),
+  c({ id: "analytics", slug: "analytics", title: "Analytics", parentId: null, order: 15, status: "planned", phase: 12, description: "Personal and platform-wide analytics." }),
+  c({ id: "admin", slug: "admin", title: "Admin", parentId: null, order: 16, status: "planned", phase: 12, description: "Challenge/category/user administration." }),
 ];
 
 export function getChildren(parentId: string | null): CategoryNode[] {
