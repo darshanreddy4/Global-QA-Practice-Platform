@@ -41,6 +41,14 @@ function LocatorGauntlet() {
   const [values, setValues] = useState<Record<string, string>>({});
   const [results, setResults] = useState<Record<string, RowResult>>({});
 
+  // Regenerated once per mount (i.e. every Reset/reload) — row 12 proves why
+  // locating by id/class is fragile when they churn like this.
+  const dynamicSuffixes = useRef({
+    username: Math.random().toString(36).slice(2, 8),
+    email: Math.random().toString(36).slice(2, 8),
+    password: Math.random().toString(36).slice(2, 8),
+  }).current;
+
   const setAnswer = (rowId: string) => (el: Element | null) => {
     answerRefs.current[rowId] = el;
   };
@@ -360,6 +368,90 @@ function LocatorGauntlet() {
               <input ref={ref as React.Ref<HTMLInputElement>} type="checkbox" data-category="urgent" />
               urgent (enabled)
             </label>
+          </div>
+        )}
+      />
+
+      <LocatorRow
+        rowId="r11"
+        n={11}
+        difficulty="Nightmare"
+        instructions="Target the single value inside Panel 3's 2nd widget group — every panel/group/widget/value shares the exact same class and text at every level; only POSITION through the full ancestor chain disambiguates it."
+        setAnswerRef={setAnswer("r11")}
+        mode={modes.r11 ?? "css"}
+        onModeChange={(m) => setModes((s) => ({ ...s, r11: m }))}
+        value={values.r11 ?? ""}
+        onValueChange={(v) => setValues((s) => ({ ...s, r11: v }))}
+        onValidate={() => validate("r11", "row11Solved")}
+        result={results.r11}
+        render={(ref) => (
+          <div className="flex gap-3">
+            {[1, 2, 3].map((panelIdx) => (
+              <div key={panelIdx} className="panel rounded border border-slate-200 p-2">
+                <div className="panel-header text-[10px] text-slate-400">Panel</div>
+                <div className="panel-body space-y-1">
+                  {[1, 2].map((groupIdx) => (
+                    <div key={groupIdx} className="widget-group rounded bg-slate-100 p-1">
+                      <div className="widget">
+                        <div className="widget-header text-[10px] text-slate-400">Widget</div>
+                        <div className="widget-content">
+                          {panelIdx === 3 && groupIdx === 2 ? (
+                            <span ref={ref as React.Ref<HTMLSpanElement>} className="value text-xs">
+                              --
+                            </span>
+                          ) : (
+                            <span className="value text-xs">--</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      />
+
+      <LocatorRow
+        rowId="r12"
+        n={12}
+        difficulty="Nightmare"
+        instructions="Target the Email field. Its id and class (and the other two fields') are regenerated every time this page remounts (click Reset to watch the id below change) — locate it by something that never changes instead."
+        setAnswerRef={setAnswer("r12")}
+        mode={modes.r12 ?? "css"}
+        onModeChange={(m) => setModes((s) => ({ ...s, r12: m }))}
+        value={values.r12 ?? ""}
+        onValueChange={(v) => setValues((s) => ({ ...s, r12: v }))}
+        onValidate={() => validate("r12", "row12Solved")}
+        result={results.r12}
+        render={(ref) => (
+          <div className="space-y-1">
+            <input
+              id={`field-${dynamicSuffixes.username}`}
+              className={`field-${dynamicSuffixes.username} block rounded border border-slate-300 px-2 py-1 text-xs`}
+              type="text"
+              placeholder="Username"
+              readOnly
+            />
+            <input
+              ref={ref as React.Ref<HTMLInputElement>}
+              id={`field-${dynamicSuffixes.email}`}
+              className={`field-${dynamicSuffixes.email} block rounded border border-slate-300 px-2 py-1 text-xs`}
+              type="email"
+              placeholder="name@company.com"
+              readOnly
+            />
+            <input
+              id={`field-${dynamicSuffixes.password}`}
+              className={`field-${dynamicSuffixes.password} block rounded border border-slate-300 px-2 py-1 text-xs`}
+              type="password"
+              placeholder="Password"
+              readOnly
+            />
+            <p className="text-[11px] text-slate-400">
+              Email field&apos;s current id: <code>field-{dynamicSuffixes.email}</code> (regenerates on Reset)
+            </p>
           </div>
         )}
       />
